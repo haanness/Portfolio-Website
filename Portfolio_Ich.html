@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artist Portfolio</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #f9f9f9;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            z-index: 100;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 5%;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+        }
+
+        .nav-links li {
+            margin-left: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #666;
+        }
+
+        /* Main Content Styles */
+        main {
+            margin-top: 80px;
+            padding: 2rem 5%;
+        }
+
+        section {
+            padding: 3rem 0;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+
+        /* About Section */
+        .about-text {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        /* Image Grid */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .image-item {
+            overflow: hidden;
+            border-radius: 5px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .image-item:hover {
+            transform: scale(1.03);
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Contact Section */
+        .contact-info {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: #333;
+            color: #fff;
+            margin-top: 2rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">Artist Name</div>
+            <ul class="nav-links">
+                <li><a href="#about">About</a></li>
+                <li><a href="#work">Work</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="about">
+            <h2 class="section-title">About</h2>
+            <div class="about-text">
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                    Nullam in dui mauris. Vivamus hendrerit arcu sed erat molestie vehicula.
+                    Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor.
+                    Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.
+                </p>
+            </div>
+        </section>
+
+        <section id="work">
+            <h2 class="section-title">My Work</h2>
+            <div class="image-grid">
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/400x300?text=Artwork+1" alt="Artwork 1">
+                </div>
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/400x300?text=Artwork+2" alt="Artwork 2">
+                </div>
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/400x300?text=Artwork+3" alt="Artwork 3">
+                </div>
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/400x300?text=Artwork+4" alt="Artwork 4">
+                </div>
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/400x300?text=Artwork+5" alt="Artwork 5">
+                </div>
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/400x300?text=Artwork+6" alt="Artwork 6">
+                </div>
+            </div>
+        </section>
+
+        <section id="contact">
+            <h2 class="section-title">Contact</h2>
+            <div class="contact-info">
+                <p>Email: artist@example.com</p>
+                <p>Phone: +123 456 7890</p>
+                <p>Instagram: @artistname</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Artist Portfolio. All rights reserved.</p>
+    </footer>
+</body>
+</html>
