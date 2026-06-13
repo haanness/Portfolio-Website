@@ -1,0 +1,214 @@
+/* ============================================================
+   project.css — Project detail page styles
+   ============================================================ */
+
+/* ── Project Layout ─────────────────────────────────────────── */
+
+.project-main {
+  padding-top: 56px; /* nav height */
+  min-height: 100vh;
+}
+
+/* Back link */
+.project-back-wrap {
+  padding: 1.5rem 1.5rem 0;
+}
+
+.project-back {
+  color: var(--c-text);
+  text-decoration: none;
+  font-size: 18px;
+  transition: color 0.4s ease;
+}
+
+.project-back:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+/* Hero image — full width */
+.project-hero-image {
+  margin: 1.5rem 0 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.project-hero-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+/* Two-column area */
+.project-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  align-items: start;
+  padding: 0;
+}
+
+/* Left: text column */
+.project-text {
+  padding: 3rem 2.5rem 4rem 1.5rem;
+  position: sticky;
+  top: 56px;
+  max-height: calc(100vh - 56px);
+  overflow-y: auto;
+}
+
+.project-title {
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--c-text);
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+
+.project-meta {
+  font-size: 14px;
+  color: var(--c-text);
+  opacity: 0.65;
+  margin-bottom: 2rem;
+}
+
+.project-body {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--c-text);
+  margin-bottom: 1.25rem;
+}
+
+.project-details {
+  margin-top: 2.5rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1.5rem;
+  font-size: 18px;
+}
+
+.project-details dt {
+  color: var(--c-text);
+  opacity: 0.6;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.project-details dd {
+  color: var(--c-text);
+  margin: 0;
+}
+
+/* Right: stacked images */
+.project-images {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-left: 1px solid currentColor;
+  opacity: 0.12;
+}
+
+/* Once we remove the trick border we need actual border */
+.project-images {
+  border-left: none;
+  position: relative;
+}
+
+.project-images::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--c-text);
+  opacity: 0.12;
+}
+
+.project-images > * + * {
+  border-top: 1px solid var(--c-text);
+  opacity-adjustment: 0.12;
+}
+
+/* Give each image wrapper a separator line */
+.project-images > .placeholder-rect + .placeholder-rect,
+.project-images > img + img,
+.project-images > img + .placeholder-rect,
+.project-images > .placeholder-rect + img {
+  border-top: 1px solid var(--c-text);
+}
+
+/* Actual images fill the column */
+.project-images > img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+/* ── Placeholder rects ──────────────────────────────────────── */
+
+.placeholder-rect {
+  position: relative;
+  width: 100%;
+  background: var(--c-btn-clear-bg);
+  overflow: hidden;
+  transition: background-color 0.4s ease;
+}
+
+body.dark .placeholder-rect {
+  background: #008260;
+}
+
+.placeholder-hero {
+  padding-top: 40%;
+}
+
+.placeholder-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--c-text);
+  opacity: 0.45;
+  pointer-events: none;
+  text-align: center;
+  padding: 1rem;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .project-content {
+    grid-template-columns: 1fr;
+  }
+
+  .project-text {
+    position: static;
+    max-height: none;
+    padding: 2rem 1.5rem;
+  }
+
+  .project-images::before {
+    display: none;
+  }
+
+  .project-images {
+    border-top: 1px solid var(--c-text);
+    opacity-adjustment: 0.12;
+  }
+
+  .project-hero-image {
+    margin: 1rem 0 0;
+  }
+}
+
+/* ── Subpage: no canvas layer ───────────────────────────────── */
+
+body:not(:has(.canvas-layer)) .page-content {
+  min-height: 100vh;
+}

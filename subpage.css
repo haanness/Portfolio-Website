@@ -1,0 +1,212 @@
+/* ============================================================
+   subpage.css — Shared styles for About, Impressum, etc.
+   ============================================================ */
+
+/* ── Subpage Shell ──────────────────────────────────────────── */
+
+.subpage-main {
+  padding-top: 56px;
+  min-height: calc(100vh - 56px);
+}
+
+.subpage-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem 6rem;
+}
+
+/* ── Typography ─────────────────────────────────────────────── */
+
+.subpage-title {
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--c-text);
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+}
+
+.subpage-intro {
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--c-text);
+  opacity: 0.65;
+  margin-bottom: 3rem;
+}
+
+.subpage-section {
+  margin-bottom: 2.5rem;
+}
+
+.subpage-section h2 {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--c-text);
+  opacity: 0.65;
+  margin-bottom: 0.6rem;
+}
+
+.subpage-section p {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--c-text);
+  margin-bottom: 0.3rem;
+}
+
+/* ── Placeholder rects ──────────────────────────────────────── */
+
+.placeholder-rect {
+  position: relative;
+  width: 100%;
+  background: var(--c-btn-clear-bg);
+  overflow: hidden;
+  transition: background-color 0.4s ease;
+}
+
+body.dark .placeholder-rect {
+  background: #008260;
+}
+
+.placeholder-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--c-text);
+  opacity: 0.45;
+  pointer-events: none;
+  text-align: center;
+  padding: 1rem;
+}
+
+/* ── About layout ───────────────────────────────────────────── */
+
+.about-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: start;
+  max-width: 1100px;
+}
+
+.about-profile {
+  position: sticky;
+  top: calc(56px + 2rem);
+}
+
+.about-photo-wrap {
+  margin-bottom: 2rem;
+}
+
+.about-photo-placeholder {
+  width: 100%;
+  padding-top: 125%; /* 4:5 portrait */
+  border-radius: 6px;
+}
+
+.about-photo-wrap img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.about-intro {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--c-text);
+  margin-top: 0;
+}
+
+/* ── CV ─────────────────────────────────────────────────────── */
+
+.about-cv {
+  padding-top: 4rem;
+}
+
+.cv-heading {
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--c-text);
+  margin-bottom: 2.5rem;
+  line-height: 1.2;
+}
+
+.cv-section {
+  margin-bottom: 2.5rem;
+  border-top: 1px solid var(--c-text);
+  padding-top: 1rem;
+}
+
+body.dark .cv-section {
+  border-top-color: rgba(249, 248, 241, 0.25);
+}
+
+.cv-section-title {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--c-text);
+  opacity: 0.55;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cv-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.35rem 0;
+  font-size: 18px;
+  color: var(--c-text);
+}
+
+.cv-entry-title {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.cv-entry-date {
+  white-space: nowrap;
+  opacity: 0.55;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .about-layout {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .about-profile {
+    position: static;
+  }
+
+  .about-photo-placeholder {
+    padding-top: 100%;
+  }
+
+  .about-cv {
+    padding-top: 0;
+  }
+
+  .cv-entry {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .cv-entry-date {
+    font-size: 14px;
+  }
+
+  .subpage-content {
+    padding: 2.5rem 1.5rem 4rem;
+  }
+}
