@@ -21,7 +21,7 @@ const TRANSLATIONS = {
 
     // Footer
     'footer.rights': '© 2026 Hannes Oberparleiter. All rights reserved.',
-    'footer.impressum': 'Impressum',
+    'footer.impressum': 'Imprint',
 
     // Buttons
     'btn.clear': 'Clear Canvas',
@@ -52,7 +52,7 @@ const TRANSLATIONS = {
     'about.cv.lang3': 'English',
 
     // Impressum page
-    'impressum.title': 'Impressum',
+    'impressum.title': 'Imprint',
     'impressum.info': 'Information according to § 5 ECG',
     'impressum.name': '[Full Name]',
     'impressum.address': '[Street Address]',
