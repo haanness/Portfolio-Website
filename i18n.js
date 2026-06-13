@@ -21,6 +21,7 @@ const TRANSLATIONS = {
 
     // Footer
     'footer.rights': '© 2026 Hannes Oberparleiter. All rights reserved.',
+    'footer.impressum': 'Impressum',
 
     // Buttons
     'btn.clear': 'Clear Canvas',
@@ -86,6 +87,7 @@ const TRANSLATIONS = {
     'tab.film': 'Film',
 
     'footer.rights': '© 2026 Hannes Oberparleiter. Alle Rechte vorbehalten.',
+    'footer.impressum': 'Impressum',
 
     'btn.clear': 'Löschen',
     'btn.save': 'Speichern',
@@ -147,6 +149,7 @@ const TRANSLATIONS = {
     'tab.film': 'Film',
 
     'footer.rights': '© 2026 Hannes Oberparleiter. Tutti i diritti riservati.',
+    'footer.impressum': 'Note legali',
 
     'btn.clear': 'Cancella',
     'btn.save': 'Salva disegno',
