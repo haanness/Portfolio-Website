@@ -6,6 +6,14 @@ const GREEN = '#00906A';
 const WHITE = '#F9F8F1';
 
 
+// ── Dark Mode: apply immediately to prevent flash ─────────────
+// Reading localStorage and toggling body.dark here (before any paint)
+// prevents the brief white flash when the user has dark mode enabled.
+
+let isMoon = localStorage.getItem('theme') === 'dark';
+if (isMoon) document.body.classList.add('dark');
+
+
 // ── Hamburger ─────────────────────────────────────────────────
 
 const hamburger = document.getElementById('hamburger');
@@ -50,7 +58,7 @@ const buildSunContent = (color) => `
 
 // BUG FIX: read persisted theme from localStorage so subpages
 // remember the user's choice across navigation.
-let isMoon = localStorage.getItem('theme') === 'dark';
+// (isMoon is already declared and body.dark already applied above.)
 
 const applyDarkMode = (dark) => {
   document.body.classList.toggle('dark', dark);
@@ -97,29 +105,28 @@ sunIcons.forEach(icon => icon.addEventListener('click', toggleSun));
 
 const langSlider = document.querySelector('.lang-slider');
 
-const moveSlider = (link) => {
+// `animated=false` for initial placement so the pill appears instantly
+// in the correct spot rather than sliding in from x=0 on page load.
+const moveSlider = (link, animated = true) => {
   if (!link || !langSlider) return;
-  langSlider.style.width     = link.offsetWidth + 'px';
-  langSlider.style.transform = `translateX(${link.offsetLeft}px) translateY(-50%)`;
+  const apply = () => {
+    langSlider.style.width     = link.offsetWidth + 'px';
+    langSlider.style.transform = `translateX(${link.offsetLeft}px) translateY(-50%)`;
+  };
+  if (animated) {
+    requestAnimationFrame(apply);
+  } else {
+    apply();
+  }
 };
 
-document.querySelectorAll('.lang-switcher a').forEach(a => {
-  a.addEventListener('click', (e) => {
-    e.preventDefault();
-    const lang = a.dataset.lang;
-    if (!lang) return;
-    document.querySelectorAll('.lang-switcher a').forEach(l => l.classList.remove('lang-active'));
-    a.classList.add('lang-active');
-    moveSlider(a);
-    // BUG FIX: actually apply the language change via the i18n engine.
-    // setLang() is defined in i18n.js which is loaded before this script.
-    if (typeof setLang === 'function') setLang(lang);
-  });
-});
+// Click handling is owned by i18n.js. project-nav.js only registers the
+// slider callback so i18n.js can move the pill after each click.
+window.__onLangChange = (link) => moveSlider(link, true);
 
 window.addEventListener('resize', () => {
   const active = document.querySelector('.lang-switcher a.lang-active');
-  if (active) moveSlider(active);
+  if (active) moveSlider(active, true);
 });
 
 
@@ -129,15 +136,17 @@ window.addEventListener('load', () => {
   // Restore dark mode
   applyDarkMode(isMoon);
 
-  // Sync active lang class and position slider
+  // Sync active lang class
   const stored = localStorage.getItem('lang') || 'en';
   document.querySelectorAll('.lang-switcher a').forEach(a => {
     a.classList.toggle('lang-active', a.dataset.lang === stored);
   });
 
+  // Position pill synchronously before enabling the CSS transition,
+  // so it appears instantly in the right spot (no slide-in jump on load).
+  const active = document.querySelector('.lang-switcher a.lang-active');
+  if (active) moveSlider(active, false);
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    const active = document.querySelector('.lang-switcher a.lang-active');
-    if (active) moveSlider(active);
     if (langSlider) langSlider.classList.add('ready');
   }));
 });

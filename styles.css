@@ -80,6 +80,8 @@ body.dark .save-drawing {
 html {
   overflow-x: hidden;
   max-width: 100%;
+  /* Overscroll area: green in light mode, cream in dark mode. */
+  background-color: var(--c-accent);
 }
 
 html, body {
@@ -258,6 +260,80 @@ nav {
 
 .page-content .nav-links .lang-switcher a:hover {
   text-decoration: none;
+}
+
+
+/* ── Nav Contact Icons ──────────────────────────────────────── */
+
+.nav-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-contact-icons {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  transition: max-width 0.35s ease, opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.nav-contact-icons.open {
+  max-width: 120px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.contact-icon-link {
+  display: flex;
+  align-items: center;
+  color: var(--c-text);
+  transition: color 0.4s ease, opacity 0.2s ease;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.contact-icon-link:hover {
+  opacity: 0.65;
+  text-decoration: none;
+}
+
+.contact-icon {
+  display: block;
+  stroke: currentColor;
+  transition: stroke 0.4s ease;
+}
+
+.nav-contact-trigger {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Mobile: icons appear below contact link in the slide-out menu */
+@media (max-width: 768px) {
+  .nav-contact-item {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.75rem;
+  }
+
+  .nav-contact-icons {
+    max-width: 0;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-width 0.3s ease, opacity 0.25s ease, height 0.3s ease;
+  }
+
+  .nav-contact-icons.open {
+    max-width: 200px;
+    height: auto;
+    opacity: 1;
+  }
 }
 
 

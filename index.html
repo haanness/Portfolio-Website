@@ -33,7 +33,32 @@
             </div>
           </div>
           <ul class="nav-links" id="nav-links">
-            <li><a href="#contact" data-i18n="nav.contact">Contact</a></li>
+            <li class="nav-contact-item">
+              <div class="nav-contact-icons" id="nav-contact-icons">
+                <!-- Phone -->
+                <a href="tel:+43000000000" class="contact-icon-link" aria-label="Phone">
+                  <svg class="contact-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
+                    <path d="M6.5 2h3l1.5 4.5-2 1.5a11 11 0 0 0 5 5l1.5-2L20 12.5V16A1.5 1.5 0 0 1 18.5 17.5C9.9 17 2 9.1 2 5.5A1.5 1.5 0 0 1 3.5 4h3z"/>
+                  </svg>
+                </a>
+                <!-- Mail -->
+                <a href="mailto:hello@example.com" class="contact-icon-link" aria-label="Email">
+                  <svg class="contact-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                    <polyline points="2,4 12,13 22,4"/>
+                  </svg>
+                </a>
+                <!-- Instagram -->
+                <a href="https://www.instagram.com/" target="_blank" rel="noopener" class="contact-icon-link" aria-label="Instagram">
+                  <svg class="contact-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
+                    <rect x="2" y="2" width="20" height="20" rx="5"/>
+                    <circle cx="12" cy="12" r="5"/>
+                    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                  </svg>
+                </a>
+              </div>
+              <a href="#contact" class="nav-contact-trigger" id="nav-contact-trigger" data-i18n="nav.contact">Contact</a>
+            </li>
             <li><a href="about.html" data-i18n="nav.about">About</a></li>
             <li class="lang-item">
               <div class="lang-switcher">

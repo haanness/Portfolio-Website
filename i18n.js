@@ -218,30 +218,6 @@ function applyTranslations() {
     if (val !== undefined) el.placeholder = val;
   });
 
-  // Re-bind hero links after innerHTML replacement
-  document.querySelectorAll('.hero-link').forEach(link => {
-    link.addEventListener('click', () => {
-      const category = link.dataset.category;
-      const tab = document.querySelector(`.portfolio-tab[data-category="${category}"]`);
-      if (!tab) return;
-      const portfolioTabs = document.querySelectorAll('.portfolio-tab');
-      portfolioTabs.forEach(t2 => { t2.classList.remove('active'); t2.removeAttribute('data-open'); });
-      tab.classList.add('active');
-      tab.setAttribute('data-open', '');
-      if (typeof renderGrid === 'function') {
-        renderGrid(category);
-        updateGridCorner(tab);
-        const panel = document.getElementById('portfolio-panel');
-        if (panel && !panel.classList.contains('open')) {
-          if (typeof openPanel === 'function') openPanel();
-        } else if (typeof refreshPanelHeight === 'function') {
-          refreshPanelHeight();
-        }
-      }
-      document.querySelector('#work')?.scrollIntoView({ behavior: 'smooth' });
-    });
-  });
-
   document.documentElement.lang = currentLang;
 }
 
@@ -281,14 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.lang-switcher a').forEach(l => l.classList.remove('lang-active'));
       a.classList.add('lang-active');
       setLang(lang);
-      // move slider — immediate, no transition needed since user just clicked
-      const slider = document.querySelector('.lang-slider');
-      if (slider) {
-        requestAnimationFrame(() => {
-          slider.style.width     = a.offsetWidth + 'px';
-          slider.style.transform = `translateX(${a.offsetLeft}px) translateY(-50%)`;
-        });
-      }
+      // Notify slider (registered by script.js or project-nav.js)
+      if (typeof window.__onLangChange === 'function') window.__onLangChange(a);
     });
   });
 });

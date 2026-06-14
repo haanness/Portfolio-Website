@@ -4,6 +4,14 @@ const GREEN = '#00906A';
 const WHITE = '#F9F8F1';
 
 
+// ── Dark Mode: apply immediately to prevent flash ─────────────
+// Reading localStorage and toggling body.dark here (before first paint)
+// prevents the brief white flash when the user has dark mode enabled.
+
+let isMoon = localStorage.getItem('theme') === 'dark';
+if (isMoon) document.body.classList.add('dark');
+
+
 // ── DOM refs ──────────────────────────────────────────────────
 
 const hamburger   = document.getElementById('hamburger');
@@ -328,7 +336,7 @@ document.addEventListener('touchstart', (e) => {
       canvas.style.touchAction   = 'none';
       startDraw(e);
     }
-  }, 300);
+  }, 120);
 }, { passive: true });
 
 document.addEventListener('touchmove', (e) => {
@@ -381,35 +389,35 @@ const heroObserver = new IntersectionObserver((entries) => {
 document.querySelectorAll('.hero-item').forEach(item => heroObserver.observe(item));
 
 
-// ── Language switcher ─────────────────────────────────────────
+// ── Language switcher slider ──────────────────────────────────
+// Click handling and setLang() calls are owned by i18n.js (DOMContentLoaded).
+// This file is only responsible for moving the slider indicator, which requires
+// layout metrics unavailable to i18n.js at parse time.
 
-const langLinks  = document.querySelectorAll('.lang-switcher a');
 const langSlider = document.querySelector('.lang-slider');
 
-const moveSlider = (link) => {
+// Moves the slider pill. `animated` controls whether the CSS transition fires.
+// Pass animated=false for the initial placement (before first paint) so the
+// pill appears instantly in the right spot rather than sliding in from x=0.
+const moveSlider = (link, animated = true) => {
   if (!link || !langSlider) return;
-  requestAnimationFrame(() => {
+  const apply = () => {
     langSlider.style.width     = link.offsetWidth + 'px';
     langSlider.style.transform = `translateX(${link.offsetLeft}px) translateY(-50%)`;
-  });
+  };
+  if (animated) {
+    requestAnimationFrame(apply);
+  } else {
+    apply();
+  }
 };
 
-langLinks.forEach(link => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault();
-    const lang = link.dataset.lang;
-    if (!lang) return;
-    langLinks.forEach(l => l.classList.remove('lang-active'));
-    link.classList.add('lang-active');
-    moveSlider(link);
-    // Delegate to i18n engine (defined in i18n.js)
-    if (typeof setLang === 'function') setLang(lang);
-  });
-});
+// Register as a callback so i18n.js can trigger slider movement after a click.
+window.__onLangChange = (link) => moveSlider(link, true);
 
 window.addEventListener('resize', () => {
   const active = document.querySelector('.lang-switcher a.lang-active');
-  if (active) moveSlider(active);
+  if (active) moveSlider(active, true);
 });
 
 
@@ -436,8 +444,7 @@ const buildSunContent = (color) => `
 `;
 
 // BUG FIX: persist dark mode in localStorage and restore it on load.
-// isMoon reflects the *current* state; we read it from storage on init.
-let isMoon = localStorage.getItem('theme') === 'dark';
+// isMoon is already declared and body.dark already applied above.
 
 const applySunIcons = (color) => {
   sunIcons.forEach(icon => {
@@ -451,8 +458,34 @@ const applyDarkMode = (dark) => {
   const color = dark ? WHITE : GREEN;
 
   selectedColor = color;
-  // Canvas may not be initialised yet on first call — guard with a check
-  if (canvas.width > 0) setCanvasBackground();
+
+  // Swap canvas background while preserving any user drawing.
+  // Strategy: if the user has drawn something, capture the strokes as a
+  // composite snapshot, repaint the new background, then draw the snapshot
+  // back on top with 'difference' blending so the stroke colour inverts
+  // correctly (cream on green ↔ green on cream).
+  if (canvas.width > 0) {
+    if (hasDrawn) {
+      // Save current canvas content
+      const offscreen = document.createElement('canvas');
+      offscreen.width  = canvas.width;
+      offscreen.height = canvas.height;
+      offscreen.getContext('2d').drawImage(canvas, 0, 0);
+
+      // Paint the new background
+      setCanvasBackground();
+
+      // Re-composite the drawing with 'difference' blend so strokes
+      // flip from the old ink colour to the new one automatically.
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = 'difference';
+      ctx.drawImage(offscreen, 0, 0);
+      ctx.restore();
+    } else {
+      setCanvasBackground();
+    }
+  }
 
   const hamburgerIcon = document.querySelector('.plus-icon');
   if (hamburgerIcon) hamburgerIcon.setAttribute('stroke', color);
@@ -633,25 +666,52 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Hero links → filter portfolio by category
-document.querySelectorAll('.hero-link').forEach(link => {
-  link.addEventListener('click', () => {
-    const category = link.dataset.category;
-    const tab = document.querySelector(`.portfolio-tab[data-category="${category}"]`);
-    if (!tab) return;
+// Hero links → filter portfolio by category.
+// Uses event delegation on the stable parent so listeners survive i18n.js
+// replacing the hero paragraph's innerHTML on every language change.
+document.querySelector('.hero-intro')?.addEventListener('click', (e) => {
+  const link = e.target.closest('.hero-link');
+  if (!link) return;
 
-    portfolioTabs.forEach(t => { t.classList.remove('active'); t.removeAttribute('data-open'); });
-    tab.classList.add('active');
-    tab.setAttribute('data-open', '');
-    activeCategory = category;
-    renderGrid(category);
-    updateGridCorner(tab);
-    if (!portfolioPanel.classList.contains('open')) openPanel();
-    else refreshPanelHeight();
+  const category = link.dataset.category;
+  const tab = document.querySelector(`.portfolio-tab[data-category="${category}"]`);
+  if (!tab) return;
 
-    document.querySelector('#work')?.scrollIntoView({ behavior: 'smooth' });
-  });
+  portfolioTabs.forEach(t => { t.classList.remove('active'); t.removeAttribute('data-open'); });
+  tab.classList.add('active');
+  tab.setAttribute('data-open', '');
+  activeCategory = category;
+  renderGrid(category);
+  updateGridCorner(tab);
+  if (!portfolioPanel.classList.contains('open')) openPanel();
+  else refreshPanelHeight();
+
+  document.querySelector('#work')?.scrollIntoView({ behavior: 'smooth' });
 });
+
+
+// ── Nav Contact Icons ─────────────────────────────────────────
+
+const navContactTrigger = document.getElementById('nav-contact-trigger');
+const navContactIcons   = document.getElementById('nav-contact-icons');
+
+if (navContactTrigger && navContactIcons) {
+  navContactTrigger.addEventListener('click', (e) => {
+    e.preventDefault();
+    const isOpen = navContactIcons.classList.toggle('open');
+    // If icons are now closed, also scroll to contact section
+    if (!isOpen) {
+      document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+
+  // Close icons when clicking anywhere outside the nav-contact-item
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.nav-contact-item')) {
+      navContactIcons.classList.remove('open');
+    }
+  });
+}
 
 
 // ── Initialise on load ────────────────────────────────────────
@@ -689,13 +749,12 @@ window.addEventListener('load', () => {
   // Teddy
   initTeddy();
 
-  // Language slider — position after fonts are fully rendered
-  document.querySelectorAll('.lang-switcher a').forEach(a => {
-    a.classList.toggle('lang-active', a.dataset.lang === (localStorage.getItem('lang') || 'en'));
-  });
+  // Language slider — position synchronously before enabling the CSS transition,
+  // so the pill appears instantly in the right spot on load (no slide-in jump).
+  const activeLink = document.querySelector('.lang-switcher a.lang-active');
+  if (activeLink) moveSlider(activeLink, false);
+  // Enable CSS transition only after the position is painted.
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    const active = document.querySelector('.lang-switcher a.lang-active');
-    if (active) moveSlider(active);
     if (langSlider) langSlider.classList.add('ready');
   }));
 
