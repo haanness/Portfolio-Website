@@ -1,10 +1,20 @@
-const hamburger = document.getElementById('hamburger');
-const navLinks = document.getElementById('nav-links');
+// ── Constants ─────────────────────────────────────────────────
 
-const canvas = document.querySelector("canvas"),
-clearCanvas = document.querySelector(".clear-canvas"),
-saveDrawing = document.querySelector(".save-drawing"),
-ctx = canvas.getContext("2d");
+const GREEN = '#00906A';
+const WHITE = '#F9F8F1';
+
+
+// ── DOM refs ──────────────────────────────────────────────────
+
+const hamburger   = document.getElementById('hamburger');
+const navLinks    = document.getElementById('nav-links');
+const canvas      = document.querySelector('canvas');
+const clearCanvas = document.querySelector('.clear-canvas');
+const saveDrawing = document.querySelector('.save-drawing');
+const ctx         = canvas.getContext('2d');
+
+
+// ── Hamburger ─────────────────────────────────────────────────
 
 hamburger.addEventListener('click', () => {
   hamburger.classList.toggle('active');
@@ -23,29 +33,46 @@ navLinks.querySelectorAll('a').forEach(link => {
   });
 });
 
-let prevMouseX, prevMouseY, snapshot,
-isDrawing = false,
-hasDrawn = false,
-brushWidth = 2,
-selectedColor = "#00906A";
+
+// ── Drawing state ─────────────────────────────────────────────
+
+let isDrawing    = false;
+let hasDrawn     = false;
+const brushWidth = 2;
+
+// Resolve initial draw color from stored theme
+let selectedColor = (localStorage.getItem('theme') === 'dark') ? WHITE : GREEN;
+
+
+// ── Canvas helpers ────────────────────────────────────────────
 
 const getCoordinates = (e) => {
   const rect = canvas.getBoundingClientRect();
-  const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
-  const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+  const x = (e.clientX ?? e.touches?.[0]?.clientX) - rect.left;
+  const y = (e.clientY ?? e.touches?.[0]?.clientY) - rect.top;
   return { x, y };
 };
 
+const setCanvasBackground = () => {
+  const isDark = document.body.classList.contains('dark');
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = isDark ? GREEN : WHITE;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+  ctx.fillStyle = selectedColor;
+};
+
 const setCanvasDimensions = () => {
-  const dpr = window.devicePixelRatio || 1;
-  const width = window.innerWidth;
+  const dpr    = window.devicePixelRatio || 1;
+  const width  = window.innerWidth;
   const height = document.body.offsetHeight;
 
-  // Save existing canvas as offscreen bitmap before resize (only if user has drawn)
+  // Preserve user drawing across resize
   let savedBitmap = null;
   if (hasDrawn && canvas.width > 0 && canvas.height > 0) {
     const offscreen = document.createElement('canvas');
-    offscreen.width = canvas.width;
+    offscreen.width  = canvas.width;
     offscreen.height = canvas.height;
     offscreen.getContext('2d').drawImage(canvas, 0, 0);
     savedBitmap = offscreen;
@@ -53,13 +80,12 @@ const setCanvasDimensions = () => {
 
   canvas.style.width  = `${width}px`;
   canvas.style.height = `${height}px`;
-  canvas.width  = width  * dpr;
-  canvas.height = height * dpr;
+  canvas.width        = width  * dpr;
+  canvas.height       = height * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   setCanvasBackground();
 
-  // Restore user drawing if there was one
   if (savedBitmap) {
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -68,15 +94,14 @@ const setCanvasDimensions = () => {
   }
 };
 
-// Keep canvas height in sync whenever page content grows or shrinks
+// Keep canvas in sync whenever page layout changes
 const bodyResizeObserver = new ResizeObserver(() => {
-  const dpr = window.devicePixelRatio || 1;
+  const dpr       = window.devicePixelRatio || 1;
   const newHeight = document.body.offsetHeight;
-  const newWidth = window.innerWidth;
+  const newWidth  = window.innerWidth;
 
   if (canvas.height !== newHeight * dpr || canvas.width !== newWidth * dpr) {
     if (introPlaying) {
-      // Stop intro, resize cleanly, then restart intro from scratch
       introPlaying = false;
       cancelAnimationFrame(introAnimFrame);
       setCanvasDimensions();
@@ -88,49 +113,38 @@ const bodyResizeObserver = new ResizeObserver(() => {
 });
 bodyResizeObserver.observe(document.body);
 
-const setCanvasBackground = () => {
-  const isDark = document.body.classList.contains('dark');
-  ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = isDark ? '#00906A' : '#F9F8F1';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.restore();
-  ctx.fillStyle = selectedColor;
-};
+
+// ── Hit-test: only draw over blank areas ──────────────────────
 
 const isBlankSpace = (e) => {
-  const x = e.clientX || e.touches?.[0]?.clientX;
-  const y = e.clientY || e.touches?.[0]?.clientY;
-  if (typeof x !== "number" || typeof y !== "number") return false;
+  const x = e.clientX ?? e.touches?.[0]?.clientX;
+  const y = e.clientY ?? e.touches?.[0]?.clientY;
+  if (typeof x !== 'number' || typeof y !== 'number') return false;
 
-  canvas.style.pointerEvents = "none";
+  canvas.style.pointerEvents = 'none';
   const underlying = document.elementFromPoint(x, y);
-  canvas.style.pointerEvents = "auto";
+  canvas.style.pointerEvents = 'auto';
 
   if (!underlying) return false;
 
-  // Block drawing over UI and filled SVG paths (.st0 has pointer-events:all)
-  // Transparent SVG areas return the canvas or body — those are blank space
   return !underlying.closest(
-    "nav, .portfolio-item, .portfolio-image, .portfolio-info, .logo, .nav-links, .lang-switcher, a, footer, button, .st0"
+    'nav, .portfolio-item, .portfolio-image, .portfolio-info, ' +
+    '.logo, .nav-links, .lang-switcher, a, footer, button, .st0'
   );
 };
 
 
-
-
-
-// ── Intro Drawing: Record & Playback ─────────────────────────
+// ── Intro Drawing: Record & Playback ──────────────────────────
 
 const isExportMode = new URLSearchParams(window.location.search).has('export');
 
-let recordedStrokes = [];
-let currentStroke = null;
-let recordingStart = Date.now();
+let recordedStrokes  = [];
+let currentStroke    = null;
+let recordingStart   = Date.now();
 
 const recordPoint = (type, x, y) => {
   if (!isExportMode) return;
-  const t = Date.now() - recordingStart;
+  const t  = Date.now() - recordingStart;
   const rx = x / window.innerWidth;
   const ry = y / window.innerHeight;
   if (type === 'start') {
@@ -141,26 +155,7 @@ const recordPoint = (type, x, y) => {
   }
 };
 
-window.addEventListener('load', () => {
-  const exportBtn = document.querySelector('.export-drawing');
-  if (!exportBtn) return;
-
-  if (isExportMode) {
-    exportBtn.style.display = 'block';
-    console.log('Export mode active ✓');
-  }
-
-  exportBtn.addEventListener('click', () => {
-    const json = JSON.stringify(recordedStrokes, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'intro-drawing.json';
-    a.click();
-  });
-});
-
-let introPlaying = false;
+let introPlaying   = false;
 let introAnimFrame = null;
 
 const fadeOutIntro = () => {
@@ -172,7 +167,6 @@ const fadeOutIntro = () => {
 
 const playIntroDrawing = async () => {
   const isMobile = window.innerWidth <= 768;
-
   let strokes = null;
 
   if (typeof DRAWINGS_BUNDLE !== 'undefined') {
@@ -183,39 +177,40 @@ const playIntroDrawing = async () => {
   }
 
   if (!strokes) {
-    const folder = isMobile ? 'Startup_Drawings/Mobile_Drawings' : 'Startup_Drawings/Desktop_Drawings';
-    const count = 4;
-    const random = Math.floor(Math.random() * count) + 1;
+    const folder = isMobile
+      ? 'Startup_Drawings/Mobile_Drawings'
+      : 'Startup_Drawings/Desktop_Drawings';
+    const random = Math.floor(Math.random() * 4) + 1;
     try {
       const res = await fetch(`${folder}/drawing-${random}.json`);
       if (!res.ok) return;
       strokes = await res.json();
-    } catch { return; }
+    } catch {
+      return;
+    }
   }
 
   if (!strokes || strokes.length === 0) return;
 
+  // Normalise timestamps so the first point starts at t=0
   const firstT = strokes[0].points[0].t;
   strokes = strokes.map(stroke => ({
     points: stroke.points.map(p => ({ ...p, t: p.t - firstT }))
   }));
 
   introPlaying = true;
-  const color = document.body.classList.contains('dark') ? '#F9F8F1' : '#00906A';
-  const startTime = performance.now();
 
-  const allPoints = strokes.flatMap(s => s.points);
+  const color         = document.body.classList.contains('dark') ? WHITE : GREEN;
+  const startTime     = performance.now();
+  const allPoints     = strokes.flatMap(s => s.points);
   const totalDuration = allPoints[allPoints.length - 1].t;
-  const speed = totalDuration / 5000;
-
-  const drawnUpTo = new Array(strokes.length).fill(-1);
+  const speed         = totalDuration / 5000;
+  const drawnUpTo     = new Array(strokes.length).fill(-1);
 
   const draw = (now) => {
     if (!introPlaying) return;
     const elapsed = (now - startTime) * speed;
-
-    // Ensure dpr transform and stroke style are always correct
-    const dpr = window.devicePixelRatio || 1;
+    const dpr     = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     strokes.forEach((stroke, si) => {
@@ -224,10 +219,10 @@ const playIntroDrawing = async () => {
 
       if (i === -1 && pts[0].t <= elapsed) {
         ctx.beginPath();
-        ctx.lineWidth = brushWidth;
+        ctx.lineWidth   = brushWidth;
         ctx.strokeStyle = color;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
         ctx.moveTo(pts[0].x * window.innerWidth, pts[0].y * window.innerHeight);
         i = 0;
       }
@@ -244,19 +239,13 @@ const playIntroDrawing = async () => {
     if (elapsed < totalDuration) {
       introAnimFrame = requestAnimationFrame(draw);
     } else {
-      introPlaying = true;
+      // BUG FIX: was incorrectly set to `true`, keeping the flag alive forever.
+      introPlaying = false;
     }
   };
 
   introAnimFrame = requestAnimationFrame(draw);
 };
-
-window.addEventListener("load", () => {
-  setCanvasDimensions();
-  clearCanvas.style.display = "none";
-  saveDrawing.style.display = "none";
-  if (!isExportMode) playIntroDrawing();
-});
 
 
 // ── Drawing ───────────────────────────────────────────────────
@@ -266,25 +255,25 @@ const startDraw = (e) => {
   e.preventDefault();
   fadeOutIntro();
   isDrawing = true;
+
   if (!hasDrawn) {
     hasDrawn = true;
-    clearCanvas.style.display = "block";
-    saveDrawing.style.display = "block";
+    clearCanvas.style.display = 'block';
+    saveDrawing.style.display = 'block';
     const drawHint = document.querySelector('.draw-hint');
     if (drawHint) drawHint.style.display = 'none';
   }
-  const dpr = window.devicePixelRatio || 1;
+
+  const dpr    = window.devicePixelRatio || 1;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const coords = getCoordinates(e);
-  prevMouseX = coords.x;
-  prevMouseY = coords.y;
   recordPoint('start', coords.x, coords.y);
   ctx.beginPath();
   ctx.moveTo(coords.x, coords.y);
-  ctx.lineWidth = brushWidth;
+  ctx.lineWidth   = brushWidth;
   ctx.strokeStyle = selectedColor;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
 };
 
 const drawing = (e) => {
@@ -300,49 +289,49 @@ const stopDrawing = () => {
   isDrawing = false;
 };
 
-clearCanvas.addEventListener("click", () => {
+clearCanvas.addEventListener('click', () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   setCanvasBackground();
   hasDrawn = false;
-  clearCanvas.style.display = "none";
-  saveDrawing.style.display = "none";
+  clearCanvas.style.display = 'none';
+  saveDrawing.style.display = 'none';
 });
 
-saveDrawing.addEventListener("click", () => {
-  const link = document.createElement("a");
-  link.download = `drawing-${Date.now()}.jpg`;
-  link.href = canvas.toDataURL("image/jpeg");
+saveDrawing.addEventListener('click', () => {
+  const link      = document.createElement('a');
+  link.download   = `drawing-${Date.now()}.jpg`;
+  link.href       = canvas.toDataURL('image/jpeg');
   link.click();
 });
 
-document.addEventListener("mousedown", (e) => startDraw(e));
-document.addEventListener("mousemove", (e) => drawing(e));
-document.addEventListener("mouseup", stopDrawing);
+document.addEventListener('mousedown', startDraw);
+document.addEventListener('mousemove', drawing);
+document.addEventListener('mouseup',   stopDrawing);
 
 
 // ── Touch: Long Press to draw ─────────────────────────────────
 
-let longPressTimer = null;
-let touchMoved = false;
+let longPressTimer  = null;
+let touchMoved      = false;
 let longPressActive = false;
 
-const isTouchDevice = () => window.matchMedia("(pointer: coarse)").matches;
+const isTouchDevice = () => window.matchMedia('(pointer: coarse)').matches;
 
-document.addEventListener("touchstart", (e) => {
+document.addEventListener('touchstart', (e) => {
   if (!isTouchDevice()) return;
-  touchMoved = false;
+  touchMoved      = false;
   longPressActive = false;
 
   longPressTimer = setTimeout(() => {
     if (!touchMoved && isBlankSpace(e)) {
-      longPressActive = true;
-      canvas.style.touchAction = "none";
+      longPressActive            = true;
+      canvas.style.touchAction   = 'none';
       startDraw(e);
     }
   }, 300);
 }, { passive: true });
 
-document.addEventListener("touchmove", (e) => {
+document.addEventListener('touchmove', (e) => {
   if (!isTouchDevice()) return;
   if (longPressActive) {
     e.preventDefault();
@@ -353,44 +342,32 @@ document.addEventListener("touchmove", (e) => {
   }
 }, { passive: false });
 
-document.addEventListener("touchend", () => {
+document.addEventListener('touchend', () => {
   clearTimeout(longPressTimer);
-  if (!longPressActive) {
-    canvas.style.touchAction = "auto";
-  }
+  if (!longPressActive) canvas.style.touchAction = 'auto';
   longPressActive = false;
   stopDrawing();
 });
 
-canvas.style.touchAction = "auto";
+canvas.style.touchAction = 'auto';
 
 
 // ── Teddy GIF Hover ───────────────────────────────────────────
 
-window.addEventListener('load', () => {
+const initTeddy = () => {
   const teddyWrapper = document.querySelector('.teddy-wrapper');
-  if (!teddyWrapper) return;
+  const teddySVG     = document.querySelector('#Ebene_1');
+  if (!teddyWrapper || !teddySVG) return;
 
-  const teddySVG = document.querySelector('#Ebene_1');
-  if (!teddySVG) return;
-
-  const teddyPaths = teddySVG.querySelectorAll('.st0');
-
-  teddyPaths.forEach(path => {
-    path.addEventListener('mouseenter', () => {
-      teddyWrapper.classList.add('teddy-hovered');
-    });
-    path.addEventListener('mouseleave', () => {
-      teddyWrapper.classList.remove('teddy-hovered');
-    });
-    path.addEventListener('click', () => {
-      window.open('https://www.youtube.com', '_blank');
-    });
+  teddySVG.querySelectorAll('.st0').forEach(path => {
+    path.addEventListener('mouseenter', () => teddyWrapper.classList.add('teddy-hovered'));
+    path.addEventListener('mouseleave', () => teddyWrapper.classList.remove('teddy-hovered'));
+    path.addEventListener('click',      () => window.open('https://www.youtube.com', '_blank'));
   });
-});
+};
 
 
-
+// ── Hero scroll animation ─────────────────────────────────────
 
 const heroObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
@@ -406,165 +383,155 @@ document.querySelectorAll('.hero-item').forEach(item => heroObserver.observe(ite
 
 // ── Language switcher ─────────────────────────────────────────
 
-const langLinks = document.querySelectorAll('.lang-switcher a');
+const langLinks  = document.querySelectorAll('.lang-switcher a');
 const langSlider = document.querySelector('.lang-slider');
 
 const moveSlider = (link) => {
   if (!link || !langSlider) return;
   requestAnimationFrame(() => {
-    langSlider.style.width = link.offsetWidth + 'px';
+    langSlider.style.width     = link.offsetWidth + 'px';
     langSlider.style.transform = `translateX(${link.offsetLeft}px) translateY(-50%)`;
   });
 };
 
-const initActive = document.querySelector('.lang-switcher a.lang-active');
-if (initActive) {
-  moveSlider(initActive);
-  // Enable transition only after initial position is painted
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    langSlider.classList.add('ready');
-  }));
-}
+langLinks.forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const lang = link.dataset.lang;
+    if (!lang) return;
+    langLinks.forEach(l => l.classList.remove('lang-active'));
+    link.classList.add('lang-active');
+    moveSlider(link);
+    // Delegate to i18n engine (defined in i18n.js)
+    if (typeof setLang === 'function') setLang(lang);
+  });
+});
 
 window.addEventListener('resize', () => {
   const active = document.querySelector('.lang-switcher a.lang-active');
   if (active) moveSlider(active);
 });
 
-langLinks.forEach(link => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault();
-    langLinks.forEach(l => l.classList.remove('lang-active'));
-    link.classList.add('lang-active');
-    moveSlider(link);
-  });
-});
-
 
 // ── Sun / Moon toggle ─────────────────────────────────────────
 
-let isMoon = false;
-
-const GREEN = '#00906A';
-const WHITE = '#F9F8F1';
-
+// BUG FIX: filter out nulls so forEach never throws on missing elements
 const sunIcons = [
   document.getElementById('theme-icon'),
-  document.getElementById('theme-icon-desktop')
-];
+  document.getElementById('theme-icon-desktop'),
+].filter(Boolean);
 
 const buildSunContent = (color) => `
   <circle cx="12" cy="12" r="4" fill="${color}" style="transition: r 0.35s ease;"/>
   <g stroke="${color}" style="transition: opacity 0.25s ease;">
-    <line x1="12" y1="2" x2="12" y2="6.5"/>
+    <line x1="12" y1="2"    x2="12" y2="6.5"/>
     <line x1="12" y1="17.5" x2="12" y2="22"/>
-    <line x1="2" y1="12" x2="6.5" y2="12"/>
-    <line x1="17.5" y1="12" x2="22" y2="12"/>
-    <line x1="4.93" y1="4.93" x2="7.88" y2="7.88"/>
+    <line x1="2"  y1="12"   x2="6.5" y2="12"/>
+    <line x1="17.5" y1="12" x2="22"  y2="12"/>
+    <line x1="4.93"  y1="4.93"  x2="7.88"  y2="7.88"/>
     <line x1="16.12" y1="16.12" x2="19.07" y2="19.07"/>
-    <line x1="19.07" y1="4.93" x2="16.12" y2="7.88"/>
-    <line x1="7.88" y1="16.12" x2="4.93" y2="19.07"/>
+    <line x1="19.07" y1="4.93"  x2="16.12" y2="7.88"/>
+    <line x1="7.88"  y1="16.12" x2="4.93"  y2="19.07"/>
   </g>
 `;
 
-sunIcons.forEach(icon => {
-  icon.setAttribute('stroke', GREEN);
-  icon.innerHTML = buildSunContent(GREEN);
-});
+// BUG FIX: persist dark mode in localStorage and restore it on load.
+// isMoon reflects the *current* state; we read it from storage on init.
+let isMoon = localStorage.getItem('theme') === 'dark';
 
-const toggleSun = () => {
-  isMoon = !isMoon;
-  const color = isMoon ? WHITE : GREEN;
+const applySunIcons = (color) => {
+  sunIcons.forEach(icon => {
+    icon.setAttribute('stroke', color);
+    icon.innerHTML = buildSunContent(color);
+  });
+};
 
-  // Toggle dark class — CSS custom properties handle all color changes automatically
-  document.body.classList.toggle('dark', isMoon);
+const applyDarkMode = (dark) => {
+  document.body.classList.toggle('dark', dark);
+  const color = dark ? WHITE : GREEN;
 
-  // Update drawing color and canvas background
   selectedColor = color;
-  setCanvasBackground();
+  // Canvas may not be initialised yet on first call — guard with a check
+  if (canvas.width > 0) setCanvasBackground();
 
-  // Update hamburger stroke (SVG attribute, not CSS color)
   const hamburgerIcon = document.querySelector('.plus-icon');
   if (hamburgerIcon) hamburgerIcon.setAttribute('stroke', color);
 
-  // Animate Sun → Moon
   sunIcons.forEach(icon => {
     icon.setAttribute('stroke', color);
     const circle = icon.querySelector('circle');
     const rays   = icon.querySelector('g');
+    if (!circle || !rays) return;
     circle.setAttribute('fill', color);
     rays.setAttribute('stroke', color);
-    if (isMoon) {
-      rays.style.transition  = 'opacity 0.2s ease';
-      rays.style.opacity     = '0';
+    if (dark) {
+      rays.style.transition = 'opacity 0.2s ease';
+      rays.style.opacity    = '0';
       circle.setAttribute('r', '10');
     } else {
       circle.setAttribute('r', '4');
-      rays.style.transition  = 'opacity 0.35s ease 0.1s';
-      rays.style.opacity     = '1';
+      rays.style.transition = 'opacity 0.35s ease 0.1s';
+      rays.style.opacity    = '1';
     }
   });
 };
 
+const toggleSun = () => {
+  isMoon = !isMoon;
+  localStorage.setItem('theme', isMoon ? 'dark' : 'light');
+  applyDarkMode(isMoon);
+};
+
 sunIcons.forEach(icon => icon.addEventListener('click', toggleSun));
 
-// ── Portfolio Section ─────────────────────────────────────────
+// Render initial sun icon content before page load event fires
+applySunIcons(isMoon ? WHITE : GREEN);
 
-const portfolioData = {
-  all: [
-    { title: 'Project 01', slug: 'project-01', category: 'graphic-design' },
-    { title: 'Project 02', slug: 'project-02', category: 'illustration' },
-    { title: 'Project 03', slug: 'project-03', category: 'murals' },
-    { title: 'Project 04', slug: 'project-04', category: 'film' },
-    { title: 'Project 05', slug: 'project-05', category: 'graphic-design' },
-    { title: 'Project 06', slug: 'project-06', category: 'illustration' },
-    { title: 'Project 07', slug: 'project-07', category: 'murals' },
-    { title: 'Project 08', slug: 'project-08', category: 'film' },
-  ],
+
+// ── Portfolio data ────────────────────────────────────────────
+// BUG FIX: 'all' is derived at runtime so it never gets out of sync
+// with the per-category lists.
+
+const portfolioCategories = {
   'graphic-design': [
-    { title: 'Poster Series', slug: 'poster-series', category: 'graphic-design' },
-    { title: 'Brand Identity', slug: 'brand-identity', category: 'graphic-design' },
+    { title: 'Poster Series',    slug: 'poster-series',    category: 'graphic-design' },
+    { title: 'Brand Identity',   slug: 'brand-identity',   category: 'graphic-design' },
     { title: 'Editorial Design', slug: 'editorial-design', category: 'graphic-design' },
   ],
   illustration: [
     { title: 'Character Studies', slug: 'character-studies', category: 'illustration' },
-    { title: 'Book Cover', slug: 'book-cover', category: 'illustration' },
-    { title: 'Zine Vol. 1', slug: 'zine-vol-1', category: 'illustration' },
-    { title: 'Zine Vol. 2', slug: 'zine-vol-2', category: 'illustration' },
+    { title: 'Book Cover',        slug: 'book-cover',        category: 'illustration' },
+    { title: 'Zine Vol. 1',       slug: 'zine-vol-1',        category: 'illustration' },
+    { title: 'Zine Vol. 2',       slug: 'zine-vol-2',        category: 'illustration' },
   ],
   murals: [
     { title: 'Mural Vienna', slug: 'mural-vienna', category: 'murals' },
-    { title: 'Mural Bozen', slug: 'mural-bozen', category: 'murals' },
+    { title: 'Mural Bozen',  slug: 'mural-bozen',  category: 'murals' },
   ],
   film: [
-    { title: 'Washed Out', slug: 'washed-out', category: 'film' },
+    { title: 'Washed Out',   slug: 'washed-out',   category: 'film' },
     { title: 'Short Film 02', slug: 'short-film-02', category: 'film' },
-    { title: 'Music Video', slug: 'music-video', category: 'film' },
+    { title: 'Music Video',  slug: 'music-video',  category: 'film' },
   ],
 };
 
-const portfolioTabs = document.querySelectorAll('.portfolio-tab');
+const portfolioData = {
+  ...portfolioCategories,
+  all: Object.values(portfolioCategories).flat(),
+};
+
+
+// ── Portfolio UI ──────────────────────────────────────────────
+
+const portfolioTabs          = document.querySelectorAll('.portfolio-tab');
 const portfolioTabsContainer = document.querySelector('.portfolio-tabs');
-const portfolioPanel = document.getElementById('portfolio-panel');
-const portfolioGrid = document.getElementById('portfolio-grid');
+const portfolioPanel         = document.getElementById('portfolio-panel');
+const portfolioGrid          = document.getElementById('portfolio-grid');
 
 let activeCategory = 'all';
 
 const isMobileLayout = () => window.innerWidth <= 768;
 
-const updateGridCorner = (activeTab) => {
-  if (!activeTab || !portfolioGrid) return;
-  portfolioGrid.style.borderRadius = '10px';
-  const tabsArr = Array.from(portfolioTabs);
-  const idx = tabsArr.indexOf(activeTab);
-  if (idx === 0) {
-    portfolioGrid.style.borderTopLeftRadius = '0';
-  } else {
-    portfolioGrid.style.borderTopLeftRadius = '10px';
-  }
-};
-
-// Varied aspect ratios for masonry feel: portrait, landscape, square mixes
 const aspectRatios = [
   '75%',   // 4:3 landscape
   '125%',  // 4:5 portrait
@@ -576,21 +543,31 @@ const aspectRatios = [
   '110%',  // medium portrait
 ];
 
+const updateGridCorner = (activeTab) => {
+  if (!activeTab || !portfolioGrid) return;
+  portfolioGrid.style.borderRadius = '10px';
+  if (Array.from(portfolioTabs).indexOf(activeTab) === 0) {
+    portfolioGrid.style.borderTopLeftRadius = '0';
+  } else {
+    portfolioGrid.style.borderTopLeftRadius = '10px';
+  }
+};
+
 const renderGrid = (category) => {
   const items = portfolioData[category] || [];
   portfolioGrid.innerHTML = items.map((item, i) => {
     const ratio = aspectRatios[i % aspectRatios.length];
     return `
-    <a class="portfolio-item" href="projects/${item.slug}.html" title="${item.title}">
-      <div class="portfolio-item-inner" style="padding-top:${ratio}"></div>
-      <span class="portfolio-item-label">${item.title}</span>
-    </a>
-  `}).join('');
+      <a class="portfolio-item" href="projects/${item.slug}.html" title="${item.title}">
+        <div class="portfolio-item-inner" style="padding-top:${ratio}"></div>
+        <span class="portfolio-item-label">${item.title}</span>
+      </a>
+    `;
+  }).join('');
 };
 
 const openPanel = () => {
-  const grid = portfolioGrid;
-  portfolioPanel.style.height = grid.scrollHeight + 'px';
+  portfolioPanel.style.height = portfolioGrid.scrollHeight + 'px';
   portfolioPanel.classList.add('open');
 };
 
@@ -602,13 +579,10 @@ const closePanel = () => {
   portfolioPanel.classList.remove('open');
 };
 
-// Update height after grid content changes (different number of items)
 const refreshPanelHeight = () => {
-  if (portfolioPanel.classList.contains('open')) {
-    portfolioPanel.style.height = 'auto';
-    const h = portfolioGrid.scrollHeight;
-    portfolioPanel.style.height = h + 'px';
-  }
+  if (!portfolioPanel.classList.contains('open')) return;
+  portfolioPanel.style.height = 'auto';
+  portfolioPanel.style.height = portfolioGrid.scrollHeight + 'px';
 };
 
 portfolioTabs.forEach(tab => {
@@ -632,7 +606,7 @@ portfolioTabs.forEach(tab => {
       return;
     }
 
-    // Desktop behaviour
+    // Desktop: clicking the active tab closes the panel
     if (activeCategory === category) {
       tab.classList.remove('active');
       tab.removeAttribute('data-open');
@@ -645,10 +619,8 @@ portfolioTabs.forEach(tab => {
     tab.classList.add('active');
     tab.setAttribute('data-open', '');
     activeCategory = category;
-
     renderGrid(category);
     updateGridCorner(tab);
-
     if (!portfolioPanel.classList.contains('open')) openPanel();
     else refreshPanelHeight();
   });
@@ -661,19 +633,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Render initial "all" state
-renderGrid('all');
-const initialActiveTab = document.querySelector('.portfolio-tab.active');
-if (initialActiveTab) {
-  initialActiveTab.setAttribute('data-open', '');
-  updateGridCorner(initialActiveTab);
-}
-// Set initial panel height after layout
-requestAnimationFrame(() => {
-  portfolioPanel.style.height = portfolioGrid.scrollHeight + 'px';
-});
-
-// Hero links → jump to portfolio category
+// Hero links → filter portfolio by category
 document.querySelectorAll('.hero-link').forEach(link => {
   link.addEventListener('click', () => {
     const category = link.dataset.category;
@@ -689,6 +649,64 @@ document.querySelectorAll('.hero-link').forEach(link => {
     if (!portfolioPanel.classList.contains('open')) openPanel();
     else refreshPanelHeight();
 
-    document.querySelector('#work').scrollIntoView({ behavior: 'smooth' });
+    document.querySelector('#work')?.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+
+// ── Initialise on load ────────────────────────────────────────
+
+window.addEventListener('load', () => {
+  // Canvas
+  setCanvasDimensions();
+  clearCanvas.style.display = 'none';
+  saveDrawing.style.display = 'none';
+
+  // Restore dark mode *after* canvas dimensions are set so the
+  // background fill uses the correct colour from the start.
+  applyDarkMode(isMoon);
+
+  // Intro playback (skipped in export mode)
+  if (!isExportMode) playIntroDrawing();
+
+  // Export button (only visible with ?export in URL)
+  const exportBtn = document.querySelector('.export-drawing');
+  if (exportBtn) {
+    if (isExportMode) {
+      exportBtn.style.display = 'block';
+      console.log('Export mode active ✓');
+    }
+    exportBtn.addEventListener('click', () => {
+      const json = JSON.stringify(recordedStrokes, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const a    = document.createElement('a');
+      a.href     = URL.createObjectURL(blob);
+      a.download = 'intro-drawing.json';
+      a.click();
+    });
+  }
+
+  // Teddy
+  initTeddy();
+
+  // Language slider — position after fonts are fully rendered
+  document.querySelectorAll('.lang-switcher a').forEach(a => {
+    a.classList.toggle('lang-active', a.dataset.lang === (localStorage.getItem('lang') || 'en'));
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const active = document.querySelector('.lang-switcher a.lang-active');
+    if (active) moveSlider(active);
+    if (langSlider) langSlider.classList.add('ready');
+  }));
+
+  // Portfolio initial render
+  renderGrid('all');
+  const initialActiveTab = document.querySelector('.portfolio-tab.active');
+  if (initialActiveTab) {
+    initialActiveTab.setAttribute('data-open', '');
+    updateGridCorner(initialActiveTab);
+  }
+  requestAnimationFrame(() => {
+    portfolioPanel.style.height = portfolioGrid.scrollHeight + 'px';
   });
 });

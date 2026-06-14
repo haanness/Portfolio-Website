@@ -1,6 +1,13 @@
 // project-nav.js — nav interactions for subpages (no canvas)
 
+// ── Constants ─────────────────────────────────────────────────
+
+const GREEN = '#00906A';
+const WHITE = '#F9F8F1';
+
+
 // ── Hamburger ─────────────────────────────────────────────────
+
 const hamburger = document.getElementById('hamburger');
 const navLinks  = document.getElementById('nav-links');
 
@@ -18,39 +25,39 @@ if (hamburger && navLinks) {
   });
 }
 
-// ── Sun / Moon toggle ─────────────────────────────────────────
-let isMoon = false;
-const GREEN = '#00906A';
-const WHITE = '#F9F8F1';
 
+// ── Sun / Moon toggle ─────────────────────────────────────────
+
+// BUG FIX: filter out nulls so forEach never throws on missing elements.
 const sunIcons = [
   document.getElementById('theme-icon'),
-  document.getElementById('theme-icon-desktop')
+  document.getElementById('theme-icon-desktop'),
 ].filter(Boolean);
 
 const buildSunContent = (color) => `
   <circle cx="12" cy="12" r="4" fill="${color}" style="transition: r 0.35s ease;"/>
   <g stroke="${color}" style="transition: opacity 0.25s ease;">
-    <line x1="12" y1="2" x2="12" y2="6.5"/>
+    <line x1="12" y1="2"    x2="12" y2="6.5"/>
     <line x1="12" y1="17.5" x2="12" y2="22"/>
-    <line x1="2" y1="12" x2="6.5" y2="12"/>
-    <line x1="17.5" y1="12" x2="22" y2="12"/>
-    <line x1="4.93" y1="4.93" x2="7.88" y2="7.88"/>
+    <line x1="2"  y1="12"   x2="6.5" y2="12"/>
+    <line x1="17.5" y1="12" x2="22"  y2="12"/>
+    <line x1="4.93"  y1="4.93"  x2="7.88"  y2="7.88"/>
     <line x1="16.12" y1="16.12" x2="19.07" y2="19.07"/>
-    <line x1="19.07" y1="4.93" x2="16.12" y2="7.88"/>
-    <line x1="7.88" y1="16.12" x2="4.93" y2="19.07"/>
+    <line x1="19.07" y1="4.93"  x2="16.12" y2="7.88"/>
+    <line x1="7.88"  y1="16.12" x2="4.93"  y2="19.07"/>
   </g>
 `;
 
-sunIcons.forEach(icon => {
-  icon.setAttribute('stroke', GREEN);
-  icon.innerHTML = buildSunContent(GREEN);
-});
+// BUG FIX: read persisted theme from localStorage so subpages
+// remember the user's choice across navigation.
+let isMoon = localStorage.getItem('theme') === 'dark';
 
-const toggleSun = () => {
-  isMoon = !isMoon;
-  const color = isMoon ? WHITE : GREEN;
-  document.body.classList.toggle('dark', isMoon);
+const applyDarkMode = (dark) => {
+  document.body.classList.toggle('dark', dark);
+  const color = dark ? WHITE : GREEN;
+
+  const hamburgerIcon = document.querySelector('.plus-icon');
+  if (hamburgerIcon) hamburgerIcon.setAttribute('stroke', color);
 
   sunIcons.forEach(icon => {
     icon.setAttribute('stroke', color);
@@ -59,25 +66,35 @@ const toggleSun = () => {
     if (!circle || !rays) return;
     circle.setAttribute('fill', color);
     rays.setAttribute('stroke', color);
-    if (isMoon) {
-      rays.style.transition  = 'opacity 0.2s ease';
-      rays.style.opacity     = '0';
+    if (dark) {
+      rays.style.transition = 'opacity 0.2s ease';
+      rays.style.opacity    = '0';
       circle.setAttribute('r', '10');
     } else {
       circle.setAttribute('r', '4');
-      rays.style.transition  = 'opacity 0.35s ease 0.1s';
-      rays.style.opacity     = '1';
+      rays.style.transition = 'opacity 0.35s ease 0.1s';
+      rays.style.opacity    = '1';
     }
   });
-
-  const hamburgerIcon = document.querySelector('.plus-icon');
-  if (hamburgerIcon) hamburgerIcon.setAttribute('stroke', color);
 };
+
+const toggleSun = () => {
+  isMoon = !isMoon;
+  localStorage.setItem('theme', isMoon ? 'dark' : 'light');
+  applyDarkMode(isMoon);
+};
+
+// Render icon content immediately (before load event)
+sunIcons.forEach(icon => {
+  icon.setAttribute('stroke', isMoon ? WHITE : GREEN);
+  icon.innerHTML = buildSunContent(isMoon ? WHITE : GREEN);
+});
 
 sunIcons.forEach(icon => icon.addEventListener('click', toggleSun));
 
+
 // ── Language switcher slider ──────────────────────────────────
-const langLinks  = document.querySelectorAll('.lang-switcher a');
+
 const langSlider = document.querySelector('.lang-slider');
 
 const moveSlider = (link) => {
@@ -86,20 +103,41 @@ const moveSlider = (link) => {
   langSlider.style.transform = `translateX(${link.offsetLeft}px) translateY(-50%)`;
 };
 
-// Position after full load so font metrics are correct
-window.addEventListener('load', () => {
-  document.querySelectorAll('.lang-switcher a').forEach(a => {
-    const stored = localStorage.getItem('lang') || 'en';
-    a.classList.toggle('lang-active', a.dataset.lang === stored);
+document.querySelectorAll('.lang-switcher a').forEach(a => {
+  a.addEventListener('click', (e) => {
+    e.preventDefault();
+    const lang = a.dataset.lang;
+    if (!lang) return;
+    document.querySelectorAll('.lang-switcher a').forEach(l => l.classList.remove('lang-active'));
+    a.classList.add('lang-active');
+    moveSlider(a);
+    // BUG FIX: actually apply the language change via the i18n engine.
+    // setLang() is defined in i18n.js which is loaded before this script.
+    if (typeof setLang === 'function') setLang(lang);
   });
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    const active = document.querySelector('.lang-switcher a.lang-active');
-    if (active) moveSlider(active);
-    if (langSlider) langSlider.classList.add('ready');
-  }));
 });
 
 window.addEventListener('resize', () => {
   const active = document.querySelector('.lang-switcher a.lang-active');
   if (active) moveSlider(active);
+});
+
+
+// ── Initialise on load ────────────────────────────────────────
+
+window.addEventListener('load', () => {
+  // Restore dark mode
+  applyDarkMode(isMoon);
+
+  // Sync active lang class and position slider
+  const stored = localStorage.getItem('lang') || 'en';
+  document.querySelectorAll('.lang-switcher a').forEach(a => {
+    a.classList.toggle('lang-active', a.dataset.lang === stored);
+  });
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const active = document.querySelector('.lang-switcher a.lang-active');
+    if (active) moveSlider(active);
+    if (langSlider) langSlider.classList.add('ready');
+  }));
 });
