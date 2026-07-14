@@ -80,17 +80,28 @@ body.dark .save-drawing {
 html {
   overflow-x: hidden;
   max-width: 100%;
-  /* Overscroll area: green in light mode, cream in dark mode. */
-  background-color: var(--c-accent);
+  min-height: 100%;
+  background-color: #F9F8F1; /* cream — light mode overscroll */
+  transition: background-color 0.4s ease;
 }
 
-html, body {
+html:has(body.dark),
+html.dark-loading {
+  background-color: #00906A; /* green — dark mode overscroll */
+}
+
+body {
   min-height: 100%;
   background-color: var(--c-bg);
   color: var(--c-text);
   position: relative;
   transition: background-color 0.4s ease, color 0.4s ease;
   max-width: 100%;
+}
+
+html.dark-loading body {
+  background-color: #00906A;
+  color: #F9F8F1;
 }
 
 
@@ -152,8 +163,12 @@ html, body {
 
 .clear-canvas,
 .save-drawing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 5px 9px 3px;
   border-radius: 4px;
   font-size: 18px;
   font-weight: 400;
@@ -212,6 +227,11 @@ nav {
   z-index: 1000;
   display: flex;
   align-items: center;
+  transition: transform 0.3s ease;
+}
+
+nav.nav-hidden {
+  transform: translateY(-100%);
 }
 
 .page-content .nav-container {
@@ -312,30 +332,6 @@ nav {
   cursor: pointer;
   white-space: nowrap;
 }
-
-/* Mobile: icons appear below contact link in the slide-out menu */
-@media (max-width: 768px) {
-  .nav-contact-item {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.75rem;
-  }
-
-  .nav-contact-icons {
-    max-width: 0;
-    height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: max-width 0.3s ease, opacity 0.25s ease, height 0.3s ease;
-  }
-
-  .nav-contact-icons.open {
-    max-width: 200px;
-    height: auto;
-    opacity: 1;
-  }
-}
-
 
 /* ── Hamburger ──────────────────────────────────────────────── */
 
@@ -665,19 +661,44 @@ body.dark .portfolio-item {
   opacity: 0.85;
 }
 
-/* Inner block that sets the aspect ratio of each placeholder */
+/* Inner block — sized by the thumbnail's own aspect ratio; only tiles
+   without a real thumbnail fall back to a padding-top placeholder ratio */
 .portfolio-item-inner {
   width: 100%;
   background: inherit;
+  position: relative;
+  overflow: hidden;
 }
 
-.portfolio-item-label {
+.portfolio-item-inner img {
   display: block;
-  padding: 0.6rem 0.75rem;
-  font-size: 14px;
-  color: var(--c-text);
-  transition: color 0.4s ease;
+  width: 100%;
+  height: auto;
+}
+
+/* Title only appears on hover, centered, over a green tint */
+.portfolio-item-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+  background: rgba(0, 144, 106, 0.88);
+  opacity: 0;
+  transition: opacity 0.25s ease;
   pointer-events: none;
+}
+
+.portfolio-item:hover .portfolio-item-overlay {
+  opacity: 1;
+}
+
+.portfolio-item-title {
+  color: #F9F8F1;
+  font-size: 16px;
+  line-height: 1.3;
 }
 
 @media (max-width: 768px) {

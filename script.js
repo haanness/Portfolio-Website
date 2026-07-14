@@ -4,6 +4,16 @@ const GREEN = '#00906A';
 const WHITE = '#F9F8F1';
 
 
+// Take full control of scroll position on navigation. Without this, the
+// browser's own automatic scroll restoration (on back/forward) can kick
+// in *after* our own code has scrolled to the right spot and silently
+// reset it back to wherever it remembers — which looks exactly like our
+// scroll never happened at all.
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+
+
 // ── Dark Mode: apply immediately to prevent flash ─────────────
 // Reading localStorage and toggling body.dark here (before first paint)
 // prevents the brief white flash when the user has dark mode enabled.
@@ -34,6 +44,9 @@ hamburger.addEventListener('click', () => {
 
 navLinks.querySelectorAll('a').forEach(link => {
   link.addEventListener('click', () => {
+    // Don't close menu for contact trigger or lang switcher
+    if (link.id === 'nav-contact-trigger') return;
+    if (link.closest('.lang-switcher')) return;
     hamburger.classList.remove('active');
     navLinks.classList.remove('active');
     clearCanvas.style.visibility = '';
@@ -50,6 +63,17 @@ const brushWidth = 2;
 
 // Resolve initial draw color from stored theme
 let selectedColor = (localStorage.getItem('theme') === 'dark') ? WHITE : GREEN;
+
+// Offscreen canvas that holds ONLY the user's strokes (transparent bg).
+// On theme-switch we repaint the main canvas background and composite
+// these strokes on top in the new ink colour — no colour corruption.
+const strokeCanvas = document.createElement('canvas');
+const strokeCtx    = strokeCanvas.getContext('2d');
+
+const syncStrokeCanvas = () => {
+  strokeCanvas.width  = canvas.width;
+  strokeCanvas.height = canvas.height;
+};
 
 
 // ── Canvas helpers ────────────────────────────────────────────
@@ -164,12 +188,16 @@ const recordPoint = (type, x, y) => {
 };
 
 let introPlaying   = false;
+let introVisible   = false; // true while intro drawing is on canvas (playing OR finished)
 let introAnimFrame = null;
 
 const fadeOutIntro = () => {
-  if (!introPlaying) return;
+  if (!introVisible) return;
   introPlaying = false;
+  introVisible = false;
   cancelAnimationFrame(introAnimFrame);
+  // Clear the strokeCanvas so intro strokes don't mix with user strokes
+  strokeCtx.clearRect(0, 0, strokeCanvas.width, strokeCanvas.height);
   setCanvasBackground();
 };
 
@@ -207,6 +235,11 @@ const playIntroDrawing = async () => {
   }));
 
   introPlaying = true;
+  introVisible = true;
+
+  // Mirror intro strokes onto strokeCanvas so theme switches can re-tint them.
+  syncStrokeCanvas();
+  strokeCtx.clearRect(0, 0, strokeCanvas.width, strokeCanvas.height);
 
   const color         = document.body.classList.contains('dark') ? WHITE : GREEN;
   const startTime     = performance.now();
@@ -220,6 +253,7 @@ const playIntroDrawing = async () => {
     const elapsed = (now - startTime) * speed;
     const dpr     = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    strokeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     strokes.forEach((stroke, si) => {
       const pts = stroke.points;
@@ -232,12 +266,21 @@ const playIntroDrawing = async () => {
         ctx.lineCap     = 'round';
         ctx.lineJoin    = 'round';
         ctx.moveTo(pts[0].x * window.innerWidth, pts[0].y * window.innerHeight);
+
+        strokeCtx.beginPath();
+        strokeCtx.lineWidth   = brushWidth;
+        strokeCtx.strokeStyle = '#000';
+        strokeCtx.lineCap     = 'round';
+        strokeCtx.lineJoin    = 'round';
+        strokeCtx.moveTo(pts[0].x * window.innerWidth, pts[0].y * window.innerHeight);
         i = 0;
       }
 
       while (i >= 0 && i < pts.length - 1 && pts[i + 1].t <= elapsed) {
         ctx.lineTo(pts[i + 1].x * window.innerWidth, pts[i + 1].y * window.innerHeight);
         ctx.stroke();
+        strokeCtx.lineTo(pts[i + 1].x * window.innerWidth, pts[i + 1].y * window.innerHeight);
+        strokeCtx.stroke();
         i++;
       }
 
@@ -247,8 +290,8 @@ const playIntroDrawing = async () => {
     if (elapsed < totalDuration) {
       introAnimFrame = requestAnimationFrame(draw);
     } else {
-      // BUG FIX: was incorrectly set to `true`, keeping the flag alive forever.
       introPlaying = false;
+      // introVisible stays true — content is still on canvas until user draws
     }
   };
 
@@ -266,6 +309,7 @@ const startDraw = (e) => {
 
   if (!hasDrawn) {
     hasDrawn = true;
+    syncStrokeCanvas();
     clearCanvas.style.display = 'block';
     saveDrawing.style.display = 'block';
     const drawHint = document.querySelector('.draw-hint');
@@ -274,14 +318,25 @@ const startDraw = (e) => {
 
   const dpr    = window.devicePixelRatio || 1;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  strokeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const coords = getCoordinates(e);
   recordPoint('start', coords.x, coords.y);
+
+  // Main canvas
   ctx.beginPath();
   ctx.moveTo(coords.x, coords.y);
   ctx.lineWidth   = brushWidth;
   ctx.strokeStyle = selectedColor;
   ctx.lineCap     = 'round';
   ctx.lineJoin    = 'round';
+
+  // Stroke-only canvas (always draws in a normalised colour so we can recolour on theme swap)
+  strokeCtx.beginPath();
+  strokeCtx.moveTo(coords.x, coords.y);
+  strokeCtx.lineWidth   = brushWidth;
+  strokeCtx.strokeStyle = '#000'; // placeholder; redrawn in correct colour on theme swap
+  strokeCtx.lineCap     = 'round';
+  strokeCtx.lineJoin    = 'round';
 };
 
 const drawing = (e) => {
@@ -291,24 +346,65 @@ const drawing = (e) => {
   recordPoint('move', coords.x, coords.y);
   ctx.lineTo(coords.x, coords.y);
   ctx.stroke();
+  strokeCtx.lineTo(coords.x, coords.y);
+  strokeCtx.stroke();
 };
 
 const stopDrawing = () => {
   isDrawing = false;
 };
 
+// Finds the pixel bounding box of the user's strokes on the (transparent-bg)
+// strokeCanvas, so "Save Drawing" can crop away the empty surrounding area.
+const getStrokeBoundingBox = () => {
+  const w = strokeCanvas.width, h = strokeCanvas.height;
+  if (!w || !h) return null;
+  const data = strokeCtx.getImageData(0, 0, w, h).data;
+  let minX = w, minY = h, maxX = -1, maxY = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (data[(y * w + x) * 4 + 3] > 10) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) return null;
+  return { minX, minY, maxX, maxY };
+};
+
 clearCanvas.addEventListener('click', () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   setCanvasBackground();
+  strokeCtx.clearRect(0, 0, strokeCanvas.width, strokeCanvas.height);
   hasDrawn = false;
   clearCanvas.style.display = 'none';
   saveDrawing.style.display = 'none';
 });
 
 saveDrawing.addEventListener('click', () => {
-  const link      = document.createElement('a');
-  link.download   = `drawing-${Date.now()}.jpg`;
-  link.href       = canvas.toDataURL('image/jpeg');
+  const dpr  = window.devicePixelRatio || 1;
+  const pad  = 24 * dpr; // small margin around the drawing
+  const bbox = getStrokeBoundingBox();
+
+  let sx = 0, sy = 0, sw = canvas.width, sh = canvas.height;
+  if (bbox) {
+    sx = Math.max(0, bbox.minX - pad);
+    sy = Math.max(0, bbox.minY - pad);
+    sw = Math.min(canvas.width,  bbox.maxX + pad) - sx;
+    sh = Math.min(canvas.height, bbox.maxY + pad) - sy;
+  }
+
+  const out = document.createElement('canvas');
+  out.width  = sw;
+  out.height = sh;
+  out.getContext('2d').drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
+
+  const link    = document.createElement('a');
+  link.download = `drawing-${Date.now()}.jpg`;
+  link.href     = out.toDataURL('image/jpeg');
   link.click();
 });
 
@@ -370,7 +466,7 @@ const initTeddy = () => {
   teddySVG.querySelectorAll('.st0').forEach(path => {
     path.addEventListener('mouseenter', () => teddyWrapper.classList.add('teddy-hovered'));
     path.addEventListener('mouseleave', () => teddyWrapper.classList.remove('teddy-hovered'));
-    path.addEventListener('click',      () => window.open('https://www.youtube.com', '_blank'));
+    path.addEventListener('click',      () => window.open('https://youtu.be/nMmstND8BKY', '_blank'));
   });
 };
 
@@ -421,6 +517,55 @@ window.addEventListener('resize', () => {
 });
 
 
+// ── Hide nav on scroll (homepage) ───────────────────────────────
+// Same accumulator approach as project-nav.js (survives very slow
+// scrolling), but only takes effect once scrolling would carry the nav
+// over the showcase — while still inside the hero section, the nav
+// always stays visible.
+
+let lastScrollY   = window.scrollY;
+let scrollAccum   = 0;
+let scrollDir     = 0; // 1 = down, -1 = up
+const HIDE_THRESHOLD = 40;
+const SHOW_THRESHOLD = 10;
+
+const getWorkOffsetTop = () => document.getElementById('work')?.offsetTop ?? Infinity;
+
+window.addEventListener('scroll', () => {
+  const nav = document.querySelector('nav');
+  if (!nav) return;
+
+  const currentY = window.scrollY;
+  const delta = currentY - lastScrollY;
+  lastScrollY = currentY;
+  if (delta === 0) return;
+
+  const dir = delta > 0 ? 1 : -1;
+  if (dir !== scrollDir) {
+    scrollDir   = dir;
+    scrollAccum = 0;
+  }
+  scrollAccum += Math.abs(delta);
+
+  // Still within the hero (hasn't reached the showcase yet) → nav always visible.
+  if (currentY < getWorkOffsetTop()) {
+    nav.classList.remove('nav-hidden');
+    return;
+  }
+
+  if (dir === 1 && scrollAccum > HIDE_THRESHOLD) {
+    nav.classList.add('nav-hidden');
+    if (hamburger && navLinks) {
+      hamburger.classList.remove('active');
+      navLinks.classList.remove('active');
+    }
+  }
+  if (dir === -1 && scrollAccum > SHOW_THRESHOLD) {
+    nav.classList.remove('nav-hidden');
+  }
+}, { passive: true });
+
+
 // ── Sun / Moon toggle ─────────────────────────────────────────
 
 // BUG FIX: filter out nulls so forEach never throws on missing elements
@@ -456,34 +601,28 @@ const applySunIcons = (color) => {
 const applyDarkMode = (dark) => {
   document.body.classList.toggle('dark', dark);
   const color = dark ? WHITE : GREEN;
-
   selectedColor = color;
 
-  // Swap canvas background while preserving any user drawing.
-  // Strategy: if the user has drawn something, capture the strokes as a
-  // composite snapshot, repaint the new background, then draw the snapshot
-  // back on top with 'difference' blending so the stroke colour inverts
-  // correctly (cream on green ↔ green on cream).
   if (canvas.width > 0) {
-    if (hasDrawn) {
-      // Save current canvas content
-      const offscreen = document.createElement('canvas');
-      offscreen.width  = canvas.width;
-      offscreen.height = canvas.height;
-      offscreen.getContext('2d').drawImage(canvas, 0, 0);
-
-      // Paint the new background
-      setCanvasBackground();
-
-      // Re-composite the drawing with 'difference' blend so strokes
-      // flip from the old ink colour to the new one automatically.
+    setCanvasBackground();
+    if ((hasDrawn || introVisible) && strokeCanvas.width > 0) {
+      // Redraw the stored strokes in the new ink colour
       ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.globalCompositeOperation = 'difference';
-      ctx.drawImage(offscreen, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      // Tint the stroke canvas by drawing it through a colour filter:
+      // draw strokes onto a temp canvas filled with new ink colour using destination-in
+      const tinted = document.createElement('canvas');
+      tinted.width  = strokeCanvas.width;
+      tinted.height = strokeCanvas.height;
+      const tc = tinted.getContext('2d');
+      tc.drawImage(strokeCanvas, 0, 0);
+      tc.globalCompositeOperation = 'source-in';
+      tc.fillStyle = color;
+      tc.fillRect(0, 0, tinted.width, tinted.height);
+      ctx.drawImage(tinted, 0, 0);
       ctx.restore();
-    } else {
-      setCanvasBackground();
     }
   }
 
@@ -527,24 +666,16 @@ applySunIcons(isMoon ? WHITE : GREEN);
 
 const portfolioCategories = {
   'graphic-design': [
-    { title: 'Poster Series',    slug: 'poster-series',    category: 'graphic-design' },
-    { title: 'Brand Identity',   slug: 'brand-identity',   category: 'graphic-design' },
-    { title: 'Editorial Design', slug: 'editorial-design', category: 'graphic-design' },
+    { title: '(most) humans',   slug: 'most-humans',   category: 'graphic-design' },
   ],
-  illustration: [
-    { title: 'Character Studies', slug: 'character-studies', category: 'illustration' },
-    { title: 'Book Cover',        slug: 'book-cover',        category: 'illustration' },
-    { title: 'Zine Vol. 1',       slug: 'zine-vol-1',        category: 'illustration' },
-    { title: 'Zine Vol. 2',       slug: 'zine-vol-2',        category: 'illustration' },
+  animation: [
+    { title: 'Washed Out',      slug: 'washed-out',    category: 'animation' },
   ],
-  murals: [
-    { title: 'Mural Vienna', slug: 'mural-vienna', category: 'murals' },
-    { title: 'Mural Bozen',  slug: 'mural-bozen',  category: 'murals' },
-  ],
-  film: [
-    { title: 'Washed Out',   slug: 'washed-out',   category: 'film' },
-    { title: 'Short Film 02', slug: 'short-film-02', category: 'film' },
-    { title: 'Music Video',  slug: 'music-video',  category: 'film' },
+  'paintings-drawings': [
+    { title: '105 7336',              slug: '105-7336',              category: 'paintings-drawings' },
+    { title: 'Interspaces',           slug: 'interspaces',           category: 'paintings-drawings' },
+    { title: 'Holzschnitte',          slug: 'holzschnitte',          category: 'paintings-drawings' },
+    { title: 'Sketches',              slug: 'sketches',              category: 'paintings-drawings' },
   ],
 };
 
@@ -590,10 +721,24 @@ const renderGrid = (category) => {
   const items = portfolioData[category] || [];
   portfolioGrid.innerHTML = items.map((item, i) => {
     const ratio = aspectRatios[i % aspectRatios.length];
+    // The poster (first hero image) is used as the showcase thumbnail, if present
+    const heroArr = (typeof PROJECTS !== 'undefined' && PROJECTS[item.slug] && PROJECTS[item.slug].hero) || [];
+    const thumb   = heroArr[0] || null;
+
+    // With a real thumbnail, the tile's height follows the image's own
+    // aspect ratio (no cropping). Without one, fall back to the varied
+    // placeholder ratio so the masonry grid still looks lively.
+    const innerStyle = thumb ? '' : ` style="padding-top:${ratio}"`;
+    const thumbImg    = thumb ? `<img src="${thumb}" alt="${item.title}">` : '';
+
     return `
-      <a class="portfolio-item" href="projects/${item.slug}.html" title="${item.title}">
-        <div class="portfolio-item-inner" style="padding-top:${ratio}"></div>
-        <span class="portfolio-item-label">${item.title}</span>
+      <a class="portfolio-item" href="project.html?id=${item.slug}" title="${item.title}">
+        <div class="portfolio-item-inner"${innerStyle}>
+          ${thumbImg}
+          <div class="portfolio-item-overlay">
+            <span class="portfolio-item-title">${item.title}</span>
+          </div>
+        </div>
       </a>
     `;
   }).join('');
@@ -602,7 +747,19 @@ const renderGrid = (category) => {
 const openPanel = () => {
   portfolioPanel.style.height = portfolioGrid.scrollHeight + 'px';
   portfolioPanel.classList.add('open');
+  syncPanelHeightWithImages();
 };
+
+// Remember which category was active and exactly how far the user had
+// scrolled when they open a project, so coming back restores both —
+// the precise scroll position, not just an approximation of it.
+portfolioGrid.addEventListener('click', (e) => {
+  if (e.target.closest('.portfolio-item')) {
+    sessionStorage.setItem('lastPortfolioCategory', activeCategory || 'all');
+    sessionStorage.setItem('lastScrollY', String(window.scrollY));
+    sessionStorage.setItem('cameFromProject', '1');
+  }
+});
 
 const closePanel = () => {
   portfolioPanel.style.height = portfolioPanel.scrollHeight + 'px';
@@ -616,6 +773,26 @@ const refreshPanelHeight = () => {
   if (!portfolioPanel.classList.contains('open')) return;
   portfolioPanel.style.height = 'auto';
   portfolioPanel.style.height = portfolioGrid.scrollHeight + 'px';
+};
+
+// Thumbnail <img> tags have no explicit width/height, so the browser
+// reserves no space for them until they've actually loaded — a height
+// measured right after renderGrid() is therefore too small and the
+// panel (which has overflow: hidden) clips the bottom rows once the
+// images pop in. Rather than watching continuously (a ResizeObserver
+// here fights the open/close CSS transition and causes jumpy height
+// changes), we wait once for every image in the grid to finish
+// loading (or fail) and correct the height a single time after that —
+// deterministic, and never touches the height mid-transition.
+const syncPanelHeightWithImages = () => {
+  const imgs = Array.from(portfolioGrid.querySelectorAll('img'));
+  const pending = imgs.filter(img => !img.complete);
+  if (!pending.length) return;
+
+  Promise.all(pending.map(img => new Promise(resolve => {
+    img.addEventListener('load', resolve, { once: true });
+    img.addEventListener('error', resolve, { once: true });
+  }))).then(refreshPanelHeight);
 };
 
 portfolioTabs.forEach(tab => {
@@ -632,7 +809,7 @@ portfolioTabs.forEach(tab => {
         portfolioTabsContainer.classList.remove('mobile-open');
         portfolioTabsContainer.appendChild(tab);
         if (!portfolioPanel.classList.contains('open')) openPanel();
-        else refreshPanelHeight();
+        else { refreshPanelHeight(); syncPanelHeightWithImages(); }
         return;
       }
       portfolioTabsContainer.classList.toggle('mobile-open');
@@ -655,7 +832,7 @@ portfolioTabs.forEach(tab => {
     renderGrid(category);
     updateGridCorner(tab);
     if (!portfolioPanel.classList.contains('open')) openPanel();
-    else refreshPanelHeight();
+    else { refreshPanelHeight(); syncPanelHeightWithImages(); }
   });
 });
 
@@ -684,10 +861,38 @@ document.querySelector('.hero-intro')?.addEventListener('click', (e) => {
   renderGrid(category);
   updateGridCorner(tab);
   if (!portfolioPanel.classList.contains('open')) openPanel();
-  else refreshPanelHeight();
+  else { refreshPanelHeight(); syncPanelHeightWithImages(); }
 
   document.querySelector('#work')?.scrollIntoView({ behavior: 'smooth' });
 });
+
+
+// ── Nav "Projects" link — smooth scroll + ensure panel open ──
+
+const navWorkLink = document.getElementById('nav-work-link');
+if (navWorkLink) {
+  navWorkLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    // Make sure the portfolio panel is open
+    if (!portfolioPanel.classList.contains('open')) {
+      const activeTab = document.querySelector('.portfolio-tab.active');
+      if (activeTab) {
+        activeTab.setAttribute('data-open', '');
+        renderGrid(activeCategory || 'all');
+        openPanel();
+      }
+    }
+    // Close mobile menu if open
+    hamburger.classList.remove('active');
+    navLinks.classList.remove('active');
+    clearCanvas.style.visibility = '';
+    saveDrawing.style.visibility = '';
+    // Smooth scroll
+    requestAnimationFrame(() => {
+      document.getElementById('work')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+}
 
 
 // ── Nav Contact Icons ─────────────────────────────────────────
@@ -698,11 +903,7 @@ const navContactIcons   = document.getElementById('nav-contact-icons');
 if (navContactTrigger && navContactIcons) {
   navContactTrigger.addEventListener('click', (e) => {
     e.preventDefault();
-    const isOpen = navContactIcons.classList.toggle('open');
-    // If icons are now closed, also scroll to contact section
-    if (!isOpen) {
-      document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' });
-    }
+    navContactIcons.classList.toggle('open');
   });
 
   // Close icons when clicking anywhere outside the nav-contact-item
@@ -758,14 +959,55 @@ window.addEventListener('load', () => {
     if (langSlider) langSlider.classList.add('ready');
   }));
 
-  // Portfolio initial render
-  renderGrid('all');
+  // Portfolio initial render — if we're coming back from a project page,
+  // restore the category the user had open before (instead of always
+  // resetting to "All Projects") and land at the exact scroll position
+  // they left from — not an approximation of it. Detected via a
+  // sessionStorage flag set the moment a project thumbnail is clicked
+  // (document.referrer is unreliable/empty for file:// pages, so it
+  // can't be used here).
+  const returningToWork  = sessionStorage.getItem('cameFromProject') === '1';
+  sessionStorage.removeItem('cameFromProject');
+  const restoredCategory = returningToWork ? sessionStorage.getItem('lastPortfolioCategory') : null;
+  const restoredScrollY  = returningToWork ? Number(sessionStorage.getItem('lastScrollY')) : null;
+  const initialCategory  = (restoredCategory && portfolioData[restoredCategory]) ? restoredCategory : 'all';
+
+  if (initialCategory !== 'all') {
+    portfolioTabs.forEach(t => { t.classList.remove('active'); t.removeAttribute('data-open'); });
+    document.querySelector(`.portfolio-tab[data-category="${initialCategory}"]`)?.classList.add('active');
+  }
+  activeCategory = initialCategory;
+
+  renderGrid(initialCategory);
   const initialActiveTab = document.querySelector('.portfolio-tab.active');
   if (initialActiveTab) {
     initialActiveTab.setAttribute('data-open', '');
     updateGridCorner(initialActiveTab);
   }
-  requestAnimationFrame(() => {
-    portfolioPanel.style.height = portfolioGrid.scrollHeight + 'px';
-  });
+
+  if (returningToWork) {
+    // Skip the open animation entirely and jump straight to the exact
+    // pixel position the user scrolled from before opening the project.
+    portfolioPanel.style.transition = 'none';
+    openPanel();
+    const restoreScroll = () => window.scrollTo(0, restoredScrollY || 0);
+    restoreScroll();
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      portfolioPanel.style.transition = '';
+      restoreScroll();
+      // Reveal the page now that it's positioned correctly (see the
+      // inline head script that hid it to avoid a flash/jump).
+      document.documentElement.classList.remove('restoring-scroll');
+    }));
+    // Safety net: re-assert the position shortly after, in case anything
+    // (e.g. a late browser scroll-restore, or images finishing loading
+    // and shifting layout) moved it back in the meantime.
+    setTimeout(restoreScroll, 60);
+    setTimeout(restoreScroll, 250);
+  } else {
+    requestAnimationFrame(() => {
+      portfolioPanel.style.height = portfolioGrid.scrollHeight + 'px';
+      syncPanelHeightWithImages();
+    });
+  }
 });

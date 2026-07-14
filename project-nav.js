@@ -27,9 +27,31 @@ if (hamburger && navLinks) {
 
   navLinks.querySelectorAll('a').forEach(link => {
     link.addEventListener('click', () => {
+      // Don't close the menu when clicking the contact trigger or lang switcher
+      if (link.id === 'nav-contact-trigger') return;
+      if (link.closest('.lang-switcher')) return;
       hamburger.classList.remove('active');
       navLinks.classList.remove('active');
     });
+  });
+}
+
+
+// ── Nav Contact Icons ─────────────────────────────────────────
+
+const navContactTrigger = document.getElementById('nav-contact-trigger');
+const navContactIcons   = document.getElementById('nav-contact-icons');
+
+if (navContactTrigger && navContactIcons) {
+  navContactTrigger.addEventListener('click', (e) => {
+    e.preventDefault();
+    navContactIcons.classList.toggle('open');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.nav-contact-item')) {
+      navContactIcons.classList.remove('open');
+    }
   });
 }
 
@@ -84,6 +106,10 @@ const applyDarkMode = (dark) => {
       rays.style.opacity    = '1';
     }
   });
+
+  // Let a page-level canvas-draw.js (if present) repaint/recolour the
+  // drawing canvas after the theme changes.
+  if (typeof window.__onThemeChange === 'function') window.__onThemeChange(dark);
 };
 
 const toggleSun = () => {
@@ -93,9 +119,20 @@ const toggleSun = () => {
 };
 
 // Render icon content immediately (before load event)
+// and apply the moon state right away so there's no sun→moon flash
 sunIcons.forEach(icon => {
-  icon.setAttribute('stroke', isMoon ? WHITE : GREEN);
-  icon.innerHTML = buildSunContent(isMoon ? WHITE : GREEN);
+  const color = isMoon ? WHITE : GREEN;
+  icon.setAttribute('stroke', color);
+  icon.innerHTML = buildSunContent(color);
+  if (isMoon) {
+    // Pre-collapse rays so the moon appears immediately
+    requestAnimationFrame(() => {
+      const rays   = icon.querySelector('g');
+      const circle = icon.querySelector('circle');
+      if (rays)   { rays.style.transition = 'none'; rays.style.opacity = '0'; }
+      if (circle) { circle.setAttribute('r', '10'); }
+    });
+  }
 });
 
 sunIcons.forEach(icon => icon.addEventListener('click', toggleSun));
@@ -150,3 +187,52 @@ window.addEventListener('load', () => {
     if (langSlider) langSlider.classList.add('ready');
   }));
 });
+
+// ── Hide nav on scroll (project/subpages only) ────────────────
+
+let lastScrollY = window.scrollY;
+let navHideTimer = null;
+
+// A very slow scroll fires many events with a tiny delta each (often < 1px),
+// so reacting to a single event's delta almost never crosses a threshold and
+// the nav never hides. Instead we accumulate the distance travelled in the
+// current direction and act once that total crosses the threshold — this
+// works the same whether the scroll happens in one big jump or a hundred
+// tiny ones.
+let scrollAccum = 0;
+let scrollDir   = 0; // 1 = down, -1 = up
+
+const HIDE_THRESHOLD = 40;
+const SHOW_THRESHOLD = 10;
+
+window.addEventListener('scroll', () => {
+  const nav = document.querySelector('nav');
+  if (!nav) return;
+
+  const currentY = window.scrollY;
+  const delta = currentY - lastScrollY;
+  lastScrollY = currentY;
+  if (delta === 0) return;
+
+  const dir = delta > 0 ? 1 : -1;
+  if (dir !== scrollDir) {
+    scrollDir   = dir;
+    scrollAccum = 0;
+  }
+  scrollAccum += Math.abs(delta);
+
+  // Scrolling down + not at the very top → hide once enough distance
+  // has accumulated in that direction.
+  if (dir === 1 && currentY > 20 && scrollAccum > HIDE_THRESHOLD) {
+    nav.classList.add('nav-hidden');
+    // Also close mobile menu if open
+    if (hamburger && navLinks) {
+      hamburger.classList.remove('active');
+      navLinks.classList.remove('active');
+    }
+  }
+  // Scrolling up → show again quickly
+  if (dir === -1 && scrollAccum > SHOW_THRESHOLD) {
+    nav.classList.remove('nav-hidden');
+  }
+}, { passive: true });
