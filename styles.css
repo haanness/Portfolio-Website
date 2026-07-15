@@ -975,7 +975,7 @@ footer {
 
   .page-content .nav-links .lang-switcher a {
     font-size: 18px;
-    padding: 4px 4px;
+    padding: 5px 4px 3px;
   }
 
   footer { padding: 1rem 1.5rem; }

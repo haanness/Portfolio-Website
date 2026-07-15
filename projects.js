@@ -47,12 +47,12 @@ const PROJECTS = {
     // hero: array of image paths for slideshow
     // Adjust filenames/extensions to match your Images/ folder
     hero: [
-      'Images/Poster_washed_out.jpg',
-      'Images/Still1_washed_out.jpg',
-      'Images/Still2_washed_out.jpg',
-      'Images/Still3_washed_out.jpg',
-      'Images/Still4_washed_out.jpg',
-      'Images/Still5_washed_out.jpg',
+      'Images/Poster_washed_out.webp',
+      'Images/Still1_washed_out.webp',
+      'Images/Still2_washed_out.webp',
+      'Images/Still3_washed_out.webp',
+      'Images/Still4_washed_out.webp',
+      'Images/Still5_washed_out.webp',
     ],
   },
 
@@ -62,7 +62,7 @@ const PROJECTS = {
     year:     '2022',
     body: [],
     hero: [
-      'Images/105_7336.png',
+      'Images/105_7336.webp',
     ],
   },
 
@@ -74,10 +74,10 @@ const PROJECTS = {
       'Diese Serie aus digitalen Malereien ist verbunden durch das Motiv des Hauseingangs. Es ging um das Verstehen eines Raums zwischen drinnen uns draußen, der sich egal wie oft man ihn durchquert immer fremd anfühlt. Die realistische digitale Ausarbeitung dieser nicht-Orte spielt bewusst mit der Ästhetik eines Handyfotos mit schlechter Qualität. Durch diesen alltäglichen, uninszenierten Blick werden die Motive realer und laden zur Reflexion über das sonst nicht wahrgenommene ein.',
     ],
     hero: [
-      'Images/Interspaces1.png',
-      'Images/Interspaces2.png',
-      'Images/Interspaces3.png',
-      'Images/Interspaces4.png',
+      'Images/Interspaces1.webp',
+      'Images/Interspaces2.webp',
+      'Images/Interspaces3.webp',
+      'Images/Interspaces4.webp',
     ],
   },
 
@@ -89,7 +89,7 @@ const PROJECTS = {
       'This animated poster addresses the social unfairness connected to climate change and describes the three stages of injustice.',
     ],
     hero: [
-      'Images/(most)_humans.jpg',
+      'Images/(most)_humans.webp',
     ],
   },
 
@@ -99,8 +99,8 @@ const PROJECTS = {
     year:     '2024',
     body: [],
     hero: [
-      'Images/Holzschnitt1.png',
-      'Images/Holzschnitt2.png',
+      'Images/Holzschnitt1.webp',
+      'Images/Holzschnitt2.webp',
     ],
   },
 
@@ -110,10 +110,10 @@ const PROJECTS = {
     year:     '2020 — Now',
     body: [],
     hero: [
-      'Images/Sketchbook1.jpg',
-      'Images/Sketchbook2.jpg',
-      'Images/Sketchbook3.jpg',
-      'Images/Sketchbook4.jpg',
+      'Images/Sketchbook1.webp',
+      'Images/Sketchbook2.webp',
+      'Images/Sketchbook3.webp',
+      'Images/Sketchbook4.webp',
     ],
   },
 
