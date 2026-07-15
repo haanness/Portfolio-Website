@@ -35,6 +35,11 @@ const PROJECTS = {
         'Dem werden Lebensratschläge von Motivationscoaches in Form von Audio-Schnipseln aus Kurzvideos gegenübergestellt. Sie reproduzieren die gängige Erzählung des individualistischen Wegs zu Glück und Erfolg. So sollen die Spannungen zwischen den vielschichtigen Problemen realistischer Lebenssituationen und den unzureichenden Antworten der Inhalte, in individualistisch geprägten sozialen Medien aufgezeigt werden.',
         'Zudem soll nachempfindbar gemacht werden, was es bedeuten kann, in einer Gesellschaft, in der es angeblich „jede:r schaffen kann“, machtlos zu sein, festzustecken und zu scheitern.',
       ],
+      it: [
+        '„Washed Out” è un cortometraggio animato che affronta il tema del fallimento e della mancanza di controllo. Cinque storie narrate in parallelo descrivono diverse situazioni di vita. L\'elemento che le accomuna è il motivo dell\'essere „bloccati”. I personaggi non riescono ad andare avanti, paralizzati dalle circostanze o da se stessi.',
+        'A ciò si contrappongono i consigli di vita impartiti da coach motivazionali sotto forma di frammenti audio tratti da brevi video, che ripropongono il racconto comune del percorso individualistico verso la felicità e il successo. L\'obiettivo è mettere in luce le tensioni tra i problemi complessi delle situazioni di vita reali e le risposte inadeguate fornite dai contenuti dei social media individualistici.',
+        'Inoltre, il film permette di immedesimarsi in ciò che può significare sentirsi impotenti, bloccati e falliti in una società in cui, presumibilmente, chiunque può farcela.',
+      ],
     },
     credits: [
       { name: 'Anja Lechthaler',      role: 'Sounddesigner' },
@@ -70,9 +75,17 @@ const PROJECTS = {
     title:    'Interspaces',
     category: 'paintings-drawings',
     year:     '2023',
-    body: [
-      'Diese Serie aus digitalen Malereien ist verbunden durch das Motiv des Hauseingangs. Es ging um das Verstehen eines Raums zwischen drinnen uns draußen, der sich egal wie oft man ihn durchquert immer fremd anfühlt. Die realistische digitale Ausarbeitung dieser nicht-Orte spielt bewusst mit der Ästhetik eines Handyfotos mit schlechter Qualität. Durch diesen alltäglichen, uninszenierten Blick werden die Motive realer und laden zur Reflexion über das sonst nicht wahrgenommene ein.',
-    ],
+    body: {
+      en: [
+        'This series of digital paintings is united by the motif of the house entrance. It is about understanding a space between inside and outside that, no matter how often you pass through it, always feels unfamiliar. The realistic digital rendering of these non-places deliberately plays with the aesthetics of a low-quality cell phone photo. Through this everyday, unstaged perspective, the motifs become more real and invite reflection on the otherwise unnoticed.',
+      ],
+      de: [
+        'Diese Serie aus digitalen Malereien ist verbunden durch das Motiv des Hauseingangs. Es ging um das Verstehen eines Raums zwischen drinnen uns draußen, der sich egal wie oft man ihn durchquert immer fremd anfühlt. Die realistische digitale Ausarbeitung dieser nicht-Orte spielt bewusst mit der Ästhetik eines Handyfotos mit schlechter Qualität. Durch diesen alltäglichen, uninszenierten Blick werden die Motive realer und laden zur Reflexion über das sonst nicht wahrgenommene ein.',
+      ],
+      it: [
+        'Questa serie di dipinti digitali è connessa dal motivo del soggetto dell\'entrata di casa. L\'obiettivo era comprendere uno spazio tra l\'interno e l\'esterno che, indipendentemente da quante volte lo si attraversi, sembra sempre estraneo. La realistica elaborazione digitale di questi non-luoghi gioca volutamente con l\'estetica di una foto scattata con un cellulare di scarsa qualità. Attraverso questo sguardo quotidiano e non in posa, i soggetti diventano più reali e invitano a riflettere su ciò che altrimenti non verrebbe percepito.',
+      ],
+    },
     hero: [
       'Images/Interspaces1.webp',
       'Images/Interspaces2.webp',
@@ -85,9 +98,17 @@ const PROJECTS = {
     title:    '(most) humans',
     category: 'graphic-design',
     year:     '2022',
-    body: [
-      'This animated poster addresses the social unfairness connected to climate change and describes the three stages of injustice.',
-    ],
+    body: {
+      en: [
+        'This animated poster addresses the social unfairness connected to climate change and describes the three stages of injustice.',
+      ],
+      de: [
+        'Dieses Plakat thematisiert die mit dem Klimawandel verbundene soziale Ungerechtigkeit und beschreibt sie in drei Stufen.',
+      ],
+      it: [
+        'Questo poster affronta il tema delle ingiustizie sociali legate al cambiamento climatico e descrive le tre fasi dell\'ingiustizia.',
+      ],
+    },
     hero: [
       'Images/(most)_humans.webp',
     ],
