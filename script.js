@@ -310,8 +310,8 @@ const startDraw = (e) => {
   if (!hasDrawn) {
     hasDrawn = true;
     syncStrokeCanvas();
-    clearCanvas.style.display = 'block';
-    saveDrawing.style.display = 'block';
+    clearCanvas.classList.add('visible');
+    saveDrawing.classList.add('visible');
     const drawHint = document.querySelector('.draw-hint');
     if (drawHint) drawHint.style.display = 'none';
   }
@@ -380,8 +380,8 @@ clearCanvas.addEventListener('click', () => {
   setCanvasBackground();
   strokeCtx.clearRect(0, 0, strokeCanvas.width, strokeCanvas.height);
   hasDrawn = false;
-  clearCanvas.style.display = 'none';
-  saveDrawing.style.display = 'none';
+  clearCanvas.classList.remove('visible');
+  saveDrawing.classList.remove('visible');
 });
 
 saveDrawing.addEventListener('click', () => {
@@ -784,9 +784,25 @@ const refreshPanelHeight = () => {
 // changes), we wait once for every image in the grid to finish
 // loading (or fail) and correct the height a single time after that —
 // deterministic, and never touches the height mid-transition.
+let heightSafetyTimer1 = null;
+let heightSafetyTimer2 = null;
+
 const syncPanelHeightWithImages = () => {
   const imgs = Array.from(portfolioGrid.querySelectorAll('img'));
   const pending = imgs.filter(img => !img.complete);
+
+  // Safety net (mainly for mobile): even when every image fires load/error,
+  // a slow or flaky connection can mean the browser hasn't finished
+  // reflowing everything by the time our Promise.all resolves, or an image
+  // silently stalls without ever firing either event. Re-run the height
+  // correction a couple more times shortly after so the panel can never
+  // get stuck showing a too-small height (looks like the showcase being
+  // cut off). Cheap and idempotent — it just re-measures and re-applies.
+  clearTimeout(heightSafetyTimer1);
+  clearTimeout(heightSafetyTimer2);
+  heightSafetyTimer1 = setTimeout(refreshPanelHeight, 400);
+  heightSafetyTimer2 = setTimeout(refreshPanelHeight, 1200);
+
   if (!pending.length) return;
 
   Promise.all(pending.map(img => new Promise(resolve => {
@@ -834,6 +850,15 @@ portfolioTabs.forEach(tab => {
     if (!portfolioPanel.classList.contains('open')) openPanel();
     else { refreshPanelHeight(); syncPanelHeightWithImages(); }
   });
+});
+
+// Recompute the panel height on resize/orientation change too — e.g.
+// rotating the phone changes the column count (1 col portrait vs more
+// columns landscape), which changes the grid's real height.
+let resizeHeightTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeHeightTimer);
+  resizeHeightTimer = setTimeout(refreshPanelHeight, 150);
 });
 
 // Close mobile dropdown when clicking outside
@@ -920,8 +945,8 @@ if (navContactTrigger && navContactIcons) {
 window.addEventListener('load', () => {
   // Canvas
   setCanvasDimensions();
-  clearCanvas.style.display = 'none';
-  saveDrawing.style.display = 'none';
+  clearCanvas.classList.remove('visible');
+  saveDrawing.classList.remove('visible');
 
   // Restore dark mode *after* canvas dimensions are set so the
   // background fill uses the correct colour from the start.

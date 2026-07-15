@@ -128,8 +128,8 @@
     if (!hasDrawn) {
       hasDrawn = true;
       syncStrokeCanvas();
-      clearCanvasBtn.style.display = 'block';
-      saveDrawingBtn.style.display = 'block';
+      clearCanvasBtn.classList.add('visible');
+      saveDrawingBtn.classList.add('visible');
     }
 
     const dpr = window.devicePixelRatio || 1;
@@ -190,8 +190,8 @@
     setCanvasBackground();
     strokeCtx.clearRect(0, 0, strokeCanvas.width, strokeCanvas.height);
     hasDrawn = false;
-    clearCanvasBtn.style.display = 'none';
-    saveDrawingBtn.style.display = 'none';
+    clearCanvasBtn.classList.remove('visible');
+    saveDrawingBtn.classList.remove('visible');
   });
 
   saveDrawingBtn.addEventListener('click', () => {
@@ -307,7 +307,7 @@
 
   window.addEventListener('load', () => {
     setCanvasDimensions();
-    clearCanvasBtn.style.display = 'none';
-    saveDrawingBtn.style.display = 'none';
+    clearCanvasBtn.classList.remove('visible');
+    saveDrawingBtn.classList.remove('visible');
   });
 })();

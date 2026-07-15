@@ -163,7 +163,12 @@ html.dark-loading body {
 
 .clear-canvas,
 .save-drawing {
-  display: inline-flex;
+  /* Hidden by default — JS reveals them (via .visible) only once the user
+     has actually drawn something. Relying only on a JS 'load' handler to
+     hide them left a brief window (worse on slow mobile connections,
+     since 'load' waits for every resource) where they'd flash visible
+     even on a completely empty canvas. */
+  display: none;
   align-items: center;
   justify-content: center;
   line-height: 1;
@@ -175,6 +180,11 @@ html.dark-loading body {
   border: none;
   white-space: nowrap;
   transition: background-color 0.4s ease, color 0.4s ease, outline-color 0.4s ease;
+}
+
+.clear-canvas.visible,
+.save-drawing.visible {
+  display: inline-flex;
 }
 
 .clear-canvas {
