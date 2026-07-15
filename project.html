@@ -306,7 +306,8 @@
           if (s.type === 'img') {
             el = document.createElement('div');
             el.className = 'slideshow-slide';
-            el.innerHTML = `<img src="${s.src}" alt="${project.title}">`;
+            const lazyAttr = i === 0 ? '' : ' loading="lazy"';
+            el.innerHTML = `<img src="${s.src}" alt="${project.title}"${lazyAttr}>`;
             const imgIndex = imgSlides.indexOf(s);
             el.addEventListener('click', () => openLightbox(imgIndex));
           } else {

@@ -7,14 +7,16 @@
 
 @font-face {
   font-family: 'AUTHENTICSans-130';
-  src: url('authentic/AUTHENTICSans-130.otf') format('opentype');
+  src: url('authentic/AUTHENTICSans-130.woff2') format('woff2'),
+       url('authentic/AUTHENTICSans-130.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
   font-family: 'AUTHENTICSans-90';
-  src: url('authentic/AUTHENTICSans-90.otf') format('opentype');
+  src: url('authentic/AUTHENTICSans-90.woff2') format('woff2'),
+       url('authentic/AUTHENTICSans-90.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
 }

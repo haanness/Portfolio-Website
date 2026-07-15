@@ -729,7 +729,7 @@ const renderGrid = (category) => {
     // aspect ratio (no cropping). Without one, fall back to the varied
     // placeholder ratio so the masonry grid still looks lively.
     const innerStyle = thumb ? '' : ` style="padding-top:${ratio}"`;
-    const thumbImg    = thumb ? `<img src="${thumb}" alt="${item.title}">` : '';
+    const thumbImg    = thumb ? `<img src="${thumb}" alt="${item.title}" loading="lazy">` : '';
 
     return `
       <a class="portfolio-item" href="project.html?id=${item.slug}" title="${item.title}">
