@@ -100,7 +100,7 @@ const PROJECTS = {
     year:     '2022',
     body: {
       en: [
-        'This animated poster addresses the social unfairness connected to climate change and describes the three stages of injustice.',
+        'This poster addresses the social unfairness connected to climate change and describes the three stages of injustice.',
       ],
       de: [
         'Dieses Plakat thematisiert die mit dem Klimawandel verbundene soziale Ungerechtigkeit und beschreibt sie in drei Stufen.',
