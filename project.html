@@ -10,9 +10,18 @@
         }
       })();
     </script>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='38' fill='none' stroke='%2300906A' stroke-width='12'/></svg>">
+    <link rel="icon" href="Images/favicon.ico" sizes="32x32">
+    <link rel="icon" type="image/svg+xml" href="Images/favicon.svg">
+    <link rel="apple-touch-icon" href="Images/apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
     <title>Project — Hannes Oberparleiter</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" id="meta-description" content="A project by Hannes Oberparleiter — graphic designer, illustrator and filmmaker from South Tyrol, Italy.">
+    <meta property="og:type" content="article">
+    <meta property="og:title" id="og-title" content="Project — Hannes Oberparleiter">
+    <meta property="og:description" id="og-description" content="A project by Hannes Oberparleiter — graphic designer, illustrator and filmmaker from South Tyrol, Italy.">
+    <meta property="og:image" id="og-image" content="https://www.hannesoberparleiter.com/Images/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="project.css">
     <script src="i18n.js"></script>
@@ -135,6 +144,30 @@
 
         // Page title
         document.title = project.title + ' — Hannes Oberparleiter';
+
+        // Meta description + Open Graph tags (falls back to a generic
+        // line for projects with no body text, e.g. image-only pieces)
+        (function () {
+          const firstParagraph = (() => {
+            if (Array.isArray(project.body)) return project.body[0];
+            const localized = project.body?.en || Object.values(project.body || {})[0];
+            return localized?.[0];
+          })();
+          const desc = firstParagraph
+            ? (firstParagraph.length > 155 ? firstParagraph.slice(0, 152) + '…' : firstParagraph)
+            : `${project.title} — a ${project.category.replace('-', ' & ')} project by Hannes Oberparleiter, ${project.year}.`;
+          const ogTitle = project.title + ' — Hannes Oberparleiter';
+          const heroImage = Array.isArray(project.hero) ? project.hero[0] : null;
+
+          document.getElementById('meta-description')?.setAttribute('content', desc);
+          document.getElementById('og-title')?.setAttribute('content', ogTitle);
+          document.getElementById('og-description')?.setAttribute('content', desc);
+          if (heroImage) {
+            document.getElementById('og-image')?.setAttribute(
+              'content', new URL(heroImage, window.location.href).href
+            );
+          }
+        })();
 
         // H1
         document.getElementById('project-title').textContent = project.title;

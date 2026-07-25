@@ -1,0 +1,11 @@
+{
+  "name": "Hannes Oberparleiter",
+  "short_name": "Oberparleiter",
+  "icons": [
+    { "src": "Images/favicon-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "Images/favicon-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#00906A",
+  "background_color": "#F9F8F1",
+  "display": "standalone"
+}
