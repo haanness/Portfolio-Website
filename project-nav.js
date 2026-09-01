@@ -191,7 +191,6 @@ window.addEventListener('load', () => {
 // ── Hide nav on scroll (project/subpages only) ────────────────
 
 let lastScrollY = window.scrollY;
-let navHideTimer = null;
 
 // A very slow scroll fires many events with a tiny delta each (often < 1px),
 // so reacting to a single event's delta almost never crosses a threshold and

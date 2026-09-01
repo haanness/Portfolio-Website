@@ -27,7 +27,6 @@
 :root {
   --c-bg:          #F9F8F1;
   --c-text:        #00906A;
-  --c-accent:      #00906A;
   --c-invert:      #F9F8F1;
   --c-btn-clear-bg:       #ECEBdc;
   --c-btn-clear-text:     #00906A;
@@ -35,7 +34,6 @@
   --c-btn-save-bg:        #00906A;
   --c-btn-save-text:      #F9F8F1;
   --c-slider-bg:          #00906A;
-  --c-slider-outline:     #00906A;
   --font-primary:  'AUTHENTICSans-130', sans-serif;
   --font-dark:     'AUTHENTICSans-90', sans-serif;
 }
@@ -43,7 +41,6 @@
 body.dark {
   --c-bg:          #00906A;
   --c-text:        #F9F8F1;
-  --c-accent:      #F9F8F1;
   --c-invert:      #00906A;
   --c-btn-clear-bg:       #008260;
   --c-btn-clear-text:     #F9F8F1;
@@ -51,7 +48,6 @@ body.dark {
   --c-btn-save-bg:        #F9F8F1;
   --c-btn-save-text:      #00906A;
   --c-slider-bg:          #F9F8F1;
-  --c-slider-outline:     #F9F8F1;
 }
 
 
@@ -114,15 +110,6 @@ html.dark-loading body {
   z-index: 2;
   display: flex;
   flex-direction: column;
-}
-
-.page-content .spacer { display: none; }
-
-.page-content .container {
-  max-width: 100%;
-  margin: 0;
-  padding: 0;
-  width: 100%;
 }
 
 
@@ -394,15 +381,11 @@ nav.nav-hidden {
   gap: 0;
   align-items: center;
   position: relative;
-  background: #ECEBdc;
+  background: var(--c-btn-clear-bg);
   border-radius: 6px;
   padding: 0;
   transition: background-color 0.4s ease;
   box-sizing: border-box;
-}
-
-body.dark .lang-switcher {
-  background: #008260;
 }
 
 .lang-slider {
@@ -584,28 +567,16 @@ body.dark .teddy-wrapper svg {
   color: var(--c-text);
 }
 
-body.dark .portfolio-tab:hover {
-  background: #008260;
-}
-
 /* Active + panel open */
 .portfolio-tab[data-open] {
   background: var(--c-btn-clear-bg);
   color: var(--c-text);
 }
 
-body.dark .portfolio-tab[data-open] {
-  background: #008260;
-}
-
 /* Active but panel closed */
 .portfolio-tab.active:not([data-open]) {
   background: var(--c-btn-clear-bg);
   color: var(--c-text);
-}
-
-body.dark .portfolio-tab.active:not([data-open]) {
-  background: #008260;
 }
 
 .tab-arrow {
@@ -643,10 +614,6 @@ body.dark .portfolio-tab.active:not([data-open]) {
   columns: 4;
   column-gap: 1.25rem;
   transition: background-color 0.4s ease;
-}
-
-body.dark .portfolio-grid {
-  background: #008260;
 }
 
 .portfolio-item {
@@ -756,10 +723,6 @@ body.dark .portfolio-item {
     padding: 0;
     gap: 0;
     overflow: hidden;
-  }
-
-  body.dark .portfolio-tabs.mobile-open {
-    background: #008260;
   }
 
   /* All tabs in open dropdown: normal rounded, normal padding */

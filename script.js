@@ -466,7 +466,7 @@ const initTeddy = () => {
   teddySVG.querySelectorAll('.st0').forEach(path => {
     path.addEventListener('mouseenter', () => teddyWrapper.classList.add('teddy-hovered'));
     path.addEventListener('mouseleave', () => teddyWrapper.classList.remove('teddy-hovered'));
-    path.addEventListener('click',      () => window.open('https://youtu.be/nMmstND8BKY', '_blank'));
+    path.addEventListener('click',      () => window.open('https://youtu.be/nMmstND8BKY', '_blank', 'noopener'));
   });
 };
 
@@ -685,6 +685,17 @@ const portfolioData = {
 };
 
 
+// Escapes text before it's interpolated into an innerHTML template string.
+// portfolioCategories/PROJECTS are static, developer-controlled data today,
+// so this isn't fixing a live exploit — but renderGrid() builds raw HTML
+// strings from these values, and escaping them costs nothing while
+// preventing markup injection if titles/paths ever come from an editable
+// source (CMS, JSON import, etc.) down the line.
+const escapeHtml = (str) => String(str).replace(/[&<>"']/g, (c) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+}[c]));
+
+
 // ── Portfolio UI ──────────────────────────────────────────────
 
 const portfolioTabs          = document.querySelectorAll('.portfolio-tab');
@@ -728,15 +739,16 @@ const renderGrid = (category) => {
     // With a real thumbnail, the tile's height follows the image's own
     // aspect ratio (no cropping). Without one, fall back to the varied
     // placeholder ratio so the masonry grid still looks lively.
+    const title = escapeHtml(item.title);
     const innerStyle = thumb ? '' : ` style="padding-top:${ratio}"`;
-    const thumbImg    = thumb ? `<img src="${thumb}" alt="${item.title}" loading="lazy">` : '';
+    const thumbImg    = thumb ? `<img src="${escapeHtml(thumb)}" alt="${title}" loading="lazy">` : '';
 
     return `
-      <a class="portfolio-item" href="project.html?id=${item.slug}" title="${item.title}">
+      <a class="portfolio-item" href="project.html?id=${encodeURIComponent(item.slug)}" title="${title}">
         <div class="portfolio-item-inner"${innerStyle}>
           ${thumbImg}
           <div class="portfolio-item-overlay">
-            <span class="portfolio-item-title">${item.title}</span>
+            <span class="portfolio-item-title">${title}</span>
           </div>
         </div>
       </a>
