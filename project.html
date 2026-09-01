@@ -134,8 +134,11 @@
     <script>
       // ── Populate page from PROJECTS data ──────────────────────
       (function () {
-        const id      = new URLSearchParams(window.location.search).get('id');
-        const project = id && PROJECTS[id];
+        const id = new URLSearchParams(window.location.search).get('id');
+        // Object.hasOwn (not just `id && PROJECTS[id]`) so a crafted URL like
+        // ?id=__proto__ or ?id=constructor can't resolve to Object.prototype /
+        // the Object constructor instead of hitting the "not found" branch.
+        const project = id && Object.hasOwn(PROJECTS, id) ? PROJECTS[id] : null;
 
         if (!project) {
           document.getElementById('project-title').textContent = 'Project not found';

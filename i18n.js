@@ -29,26 +29,8 @@ const TRANSLATIONS = {
     'btn.clear': 'Clear Canvas',
     'btn.save': 'Save Drawing',
 
-    'about.cv.title': 'CV',
-    'about.cv.education': 'Education',
-    'about.cv.edu1.title': 'Kunstgymnasium Cademia, Graphic Arts',
-    'about.cv.edu1.date': '2015 – 2019',
-    'about.cv.edu2.title': 'Communication Design, University of Applied Arts Vienna — Mag.Art.',
-    'about.cv.edu2.date': '2020 – 2026',
-    'about.cv.internships': 'Internships',
-    'about.cv.int1.title': 'Brand Gorillas',
-    'about.cv.int1.date': '2017 · 2 weeks',
-    'about.cv.int2.title': 'Mediamacs',
-    'about.cv.int2.date': '2018 · 3 weeks',
-    'about.cv.int3.title': 'VonKlammsteiner',
-    'about.cv.int3.date': '2018 · 1 month',
-    'about.cv.experience': 'Work Experience',
-    'about.cv.exp1.title': 'Freelance Graphic Designer',
-    'about.cv.exp1.date': '2020 – Present',
-    'about.cv.languages': 'Languages',
-    'about.cv.lang1': 'German (native)',
-    'about.cv.lang2': 'Italian',
-    'about.cv.lang3': 'English',
+    'about.title': 'About',
+    'about.intro': 'Hi, I\'m Hannes — a graphic designer, illustrator and filmmaker from Kaltern in South Tyrol. I studied Communication Design at the University of Applied Arts Vienna (Mag.Art.) and have been working as a freelance graphic designer since 2020.',
 
     // Impressum page
     'impressum.title': 'Imprint',
@@ -94,26 +76,8 @@ const TRANSLATIONS = {
     'btn.clear': 'Löschen',
     'btn.save': 'Speichern',
 
-    'about.cv.title': 'Lebenslauf',
-    'about.cv.education': 'Ausbildung',
-    'about.cv.edu1.title': 'Kunstgymnasium Cademia, Fachrichtung Grafik',
-    'about.cv.edu1.date': '2015 – 2019',
-    'about.cv.edu2.title': 'Kommunikationsdesign, Universität für Angewandte Kunst Wien — Mag.Art.',
-    'about.cv.edu2.date': '2020 – 2026',
-    'about.cv.internships': 'Praktika',
-    'about.cv.int1.title': 'Brand Gorillas',
-    'about.cv.int1.date': '2017 · 2 Wochen',
-    'about.cv.int2.title': 'Mediamacs',
-    'about.cv.int2.date': '2018 · 3 Wochen',
-    'about.cv.int3.title': 'VonKlammsteiner',
-    'about.cv.int3.date': '2018 · 1 Monat',
-    'about.cv.experience': 'Arbeitserfahrung',
-    'about.cv.exp1.title': 'Freiberuflicher Grafikdesigner',
-    'about.cv.exp1.date': '2020 – Heute',
-    'about.cv.languages': 'Sprachen',
-    'about.cv.lang1': 'Deutsch (Muttersprache)',
-    'about.cv.lang2': 'Italienisch',
-    'about.cv.lang3': 'Englisch',
+    'about.title': 'Über mich',
+    'about.intro': 'Hallo, ich bin Hannes — Grafikdesigner, Illustrator und Filmemacher aus Kaltern in Südtirol. Ich habe Kommunikationsdesign an der Universität für Angewandte Kunst Wien studiert (Mag.Art.) und arbeite seit 2020 als freiberuflicher Grafikdesigner.',
 
     'impressum.title': 'Impressum',
     'impressum.info': 'Angaben gemäß § 5 ECG',
@@ -157,26 +121,8 @@ const TRANSLATIONS = {
     'btn.clear': 'Cancella',
     'btn.save': 'Salva disegno',
 
-    'about.cv.title': 'Curriculum',
-    'about.cv.education': 'Formazione',
-    'about.cv.edu1.title': 'Kunstgymnasium Cademia, indirizzo Grafico',
-    'about.cv.edu1.date': '2015 – 2019',
-    'about.cv.edu2.title': 'Design della Comunicazione, Università delle Arti Applicate di Vienna — Mag.Art.',
-    'about.cv.edu2.date': '2020 – 2026',
-    'about.cv.internships': 'Tirocini',
-    'about.cv.int1.title': 'Brand Gorillas',
-    'about.cv.int1.date': '2017 · 2 settimane',
-    'about.cv.int2.title': 'Mediamacs',
-    'about.cv.int2.date': '2018 · 3 settimane',
-    'about.cv.int3.title': 'VonKlammsteiner',
-    'about.cv.int3.date': '2018 · 1 mese',
-    'about.cv.experience': 'Esperienza lavorativa',
-    'about.cv.exp1.title': 'Graphic Designer freelance',
-    'about.cv.exp1.date': '2020 – Oggi',
-    'about.cv.languages': 'Lingue',
-    'about.cv.lang1': 'Tedesco (madrelingua)',
-    'about.cv.lang2': 'Italiano',
-    'about.cv.lang3': 'Inglese',
+    'about.title': 'Chi sono',
+    'about.intro': 'Ciao, sono Hannes — graphic designer, illustratore e filmmaker di Caldaro, in Alto Adige. Ho studiato Design della Comunicazione all\'Università delle Arti Applicate di Vienna (Mag.Art.) e lavoro come graphic designer freelance dal 2020.',
 
     'impressum.title': 'Note legali',
     'impressum.info': 'Informazioni ai sensi del § 5 ECG',
@@ -201,7 +147,27 @@ const TRANSLATIONS = {
 
 // ── i18n engine ───────────────────────────────────────────────
 
-let currentLang = localStorage.getItem('lang') || 'en';
+const SUPPORTED_LANGS = ['en', 'de', 'it'];
+
+// Picks the best supported language for a first-time visitor, based on
+// their browser's language settings. Falls back to English if none of
+// the browser's preferred languages match a language we support.
+function detectBrowserLang() {
+  const candidates = (navigator.languages && navigator.languages.length)
+    ? navigator.languages
+    : [navigator.language || navigator.userLanguage || 'en'];
+
+  for (const raw of candidates) {
+    if (!raw) continue;
+    const primary = raw.slice(0, 2).toLowerCase(); // 'de-AT' -> 'de'
+    if (SUPPORTED_LANGS.includes(primary)) return primary;
+  }
+  return 'en';
+}
+
+// A saved choice (the user explicitly picked a language before) always
+// wins; only first-time visitors get the browser-based guess.
+let currentLang = localStorage.getItem('lang') || detectBrowserLang();
 
 function t(key) {
   return TRANSLATIONS[currentLang]?.[key] ?? TRANSLATIONS['en']?.[key] ?? key;

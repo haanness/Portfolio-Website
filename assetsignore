@@ -1,0 +1,17 @@
+# Files that live in the project root (because wrangler.toml uses
+# `directory = "."`) but are not meant to be served to visitors.
+# Same syntax as .gitignore. Anything matched here is skipped when
+# `wrangler deploy` uploads static assets.
+#
+# NOTE: Startup_Drawings/ is intentionally NOT listed here — script.js
+# fetches Startup_Drawings/<Desktop|Mobile>_Drawings/drawing-N.json at
+# runtime as a fallback if drawings-bundle.js fails to load, so those
+# JSON files must stay publicly reachable.
+
+wrangler.toml
+bundle-drawings.js
+.assetsignore
+.git
+.gitignore
+README.md
+node_modules
