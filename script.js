@@ -4,6 +4,27 @@ const GREEN = '#00906A';
 const WHITE = '#F9F8F1';
 
 
+// ── Mobile viewport height fix ──────────────────────────────────
+// `100vh` on mobile browsers is unreliable: some measure the full
+// screen height as if the address bar were already hidden, so
+// bottom-anchored content (like .hero-intro's .draw-hint) can end up
+// below what's actually visible on first load. CSS's newer `100svh`
+// unit fixes this in most browsers, but support is inconsistent
+// across Android browsers (e.g. some Samsung Internet versions).
+// This sets a `--vh` custom property from the actual measured
+// `window.innerHeight`, which every browser reports correctly — used
+// in styles.css as `height: calc(var(--vh, 1vh) * 100)` for the
+// most reliable result across devices. Re-run on resize/orientation
+// change so it also stays correct if the address bar shows/hides.
+
+const setViewportHeightVar = () => {
+  document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+};
+setViewportHeightVar();
+window.addEventListener('resize', setViewportHeightVar);
+window.addEventListener('orientationchange', setViewportHeightVar);
+
+
 // Take full control of scroll position on navigation. Without this, the
 // browser's own automatic scroll restoration (on back/forward) can kick
 // in *after* our own code has scrolled to the right spot and silently

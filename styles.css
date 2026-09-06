@@ -805,6 +805,8 @@ footer {
 
 .hero-intro {
   height: 100vh;
+  height: 100svh; /* better on browsers that support it */
+  height: calc(var(--vh, 1vh) * 100); /* most reliable: JS-measured actual visible height, see script.js */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -892,13 +894,6 @@ footer {
   .sun-icon-desktop { display: none; }
   #theme-icon       { display: block; }
 
-  .draw-hint {
-    right: auto;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 2rem;
-  }
-
   .page-content .nav-links {
     position: fixed;
     top: 56px;
@@ -980,7 +975,7 @@ footer {
     right: auto;
     left: 1.5rem;
     transform: none;
-    bottom: 2rem;
+    bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
     white-space: nowrap;
   }
 
