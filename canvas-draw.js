@@ -218,45 +218,69 @@
     link.click();
   });
 
-  document.addEventListener('mousedown', startDraw);
-  document.addEventListener('mousemove', drawing);
-  document.addEventListener('mouseup',   stopDrawing);
-
-  // ── Touch: Long Press to draw ─────────────────────────────────
+  // ── Input: unified Pointer Events (mouse, pen/stylus, touch) ───
+  //
+  // Mouse and touch used to be handled through two completely separate
+  // listener sets. Pen/stylus input (e.g. Wacom tablets, pen displays,
+  // Windows Ink) is often reported by the browser as touch-like pointer
+  // events rather than real "mouse" events. That routed the pen through
+  // the touch-only long-press logic below, which intentionally delays
+  // drawing by 120ms to distinguish a finger-scroll from a finger-draw
+  // on touchscreens. A pen naturally starts moving the instant it
+  // touches down, so that movement cancelled the long-press timer
+  // before drawing ever started — the pen looked like it "didn't work".
+  //
+  // Pointer Events give every input device a `pointerType` ('mouse',
+  // 'pen', or 'touch'), so we can keep the long-press behaviour for
+  // real finger touches only, while mouse and pen draw immediately.
 
   let longPressTimer  = null;
   let touchMoved      = false;
   let longPressActive = false;
-  const isTouchDevice = () => window.matchMedia('(pointer: coarse)').matches;
 
-  document.addEventListener('touchstart', (e) => {
-    if (!isTouchDevice()) return;
-    touchMoved      = false;
-    longPressActive = false;
+  document.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') {
+      touchMoved      = false;
+      longPressActive = false;
 
-    longPressTimer = setTimeout(() => {
-      if (!touchMoved && isBlankSpace(e)) {
-        longPressActive          = true;
-        canvas.style.touchAction = 'none';
-        startDraw(e);
-      }
-    }, 120);
-  }, { passive: true });
-
-  document.addEventListener('touchmove', (e) => {
-    if (!isTouchDevice()) return;
-    if (longPressActive) {
-      e.preventDefault();
-      drawing(e);
+      longPressTimer = setTimeout(() => {
+        if (!touchMoved && isBlankSpace(e)) {
+          longPressActive          = true;
+          canvas.style.touchAction = 'none';
+          startDraw(e);
+        }
+      }, 120);
     } else {
-      clearTimeout(longPressTimer);
-      touchMoved = true;
+      // Mouse or pen/stylus: draw immediately, no long-press delay.
+      startDraw(e);
+    }
+  });
+
+  document.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch') {
+      if (longPressActive) {
+        e.preventDefault();
+        drawing(e);
+      } else {
+        clearTimeout(longPressTimer);
+        touchMoved = true;
+      }
+    } else {
+      drawing(e);
     }
   }, { passive: false });
 
-  document.addEventListener('touchend', () => {
+  document.addEventListener('pointerup', (e) => {
+    if (e.pointerType === 'touch') {
+      clearTimeout(longPressTimer);
+      if (!longPressActive) canvas.style.touchAction = 'auto';
+      longPressActive = false;
+    }
+    stopDrawing();
+  });
+
+  document.addEventListener('pointercancel', () => {
     clearTimeout(longPressTimer);
-    if (!longPressActive) canvas.style.touchAction = 'auto';
     longPressActive = false;
     stopDrawing();
   });
