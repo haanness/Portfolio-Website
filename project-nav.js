@@ -3,7 +3,7 @@
 // ── Constants ─────────────────────────────────────────────────
 
 const GREEN = '#00906A';
-const WHITE = '#F9F8F1';
+const WHITE = '#F6F6F6';
 
 
 // ── Dark Mode: apply immediately to prevent flash ─────────────

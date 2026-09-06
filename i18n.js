@@ -10,7 +10,7 @@ const TRANSLATIONS = {
 
     // Hero
     'hero.intro': 'Hi! I\'m a <a class="hero-link" data-category="graphic-design">Graphic Designer</a>, <a class="hero-link" data-category="paintings-drawings">Illustrator</a> and <a class="hero-link" data-category="animation">Filmmaker</a> from South Tyrol.',
-    'hero.draw': 'Draw Something',
+    'hero.draw': 'Draw Something<span class="draw-hint-sub">(move slowly)</span>',
     'hero.trailer': '<span class="trailer-line1">Watch the trailer of my</span><span class="trailer-line2"> animated shortfilm</span>',
 
     // Portfolio tabs
@@ -60,7 +60,7 @@ const TRANSLATIONS = {
     'nav.work': 'Projekte',
 
     'hero.intro': 'Hallo! Ich bin <a class="hero-link" data-category="graphic-design">Grafikdesigner</a>, <a class="hero-link" data-category="paintings-drawings">Illustrator</a> und <a class="hero-link" data-category="animation">Filmemacher</a> aus Südtirol.',
-    'hero.draw': 'Zeichne etwas',
+    'hero.draw': 'Zeichne etwas<span class="draw-hint-sub">(langsam bewegen)</span>',
     'hero.trailer': '<span class="trailer-line1">Schau dir den Trailer meines</span><span class="trailer-line2"> Animationskurzfilms an</span>',
 
     'tab.all': 'Alle Projekte',
@@ -105,7 +105,7 @@ const TRANSLATIONS = {
     'nav.work': 'Progetti',
 
     'hero.intro': 'Ciao! Sono un <a class="hero-link" data-category="graphic-design">Graphic Designer</a>, <a class="hero-link" data-category="paintings-drawings">Illustratore</a> e <a class="hero-link" data-category="animation">Filmmaker</a> dell\'Alto Adige.',
-    'hero.draw': 'Disegna qualcosa',
+    'hero.draw': 'Disegna qualcosa<span class="draw-hint-sub">(muovi lentamente)</span>',
     'hero.trailer': '<span class="trailer-line1">Guarda il trailer del mio</span><span class="trailer-line2"> cortometraggio animato</span>',
 
     'tab.all': 'Tutti i progetti',

@@ -25,14 +25,14 @@
 /* ── CSS Custom Properties ──────────────────────────────────── */
 
 :root {
-  --c-bg:          #F9F8F1;
+  --c-bg:          #F6F6F6;
   --c-text:        #00906A;
-  --c-invert:      #F9F8F1;
-  --c-btn-clear-bg:       #ECEBdc;
+  --c-invert:      #F6F6F6;
+  --c-btn-clear-bg:       #E6E6E6;
   --c-btn-clear-text:     #00906A;
   --c-btn-clear-outline:  transparent;
   --c-btn-save-bg:        #00906A;
-  --c-btn-save-text:      #F9F8F1;
+  --c-btn-save-text:      #F6F6F6;
   --c-slider-bg:          #00906A;
   --font-primary:  'AUTHENTICSans-130', sans-serif;
   --font-dark:     'AUTHENTICSans-90', sans-serif;
@@ -40,14 +40,14 @@
 
 body.dark {
   --c-bg:          #00906A;
-  --c-text:        #F9F8F1;
+  --c-text:        #F6F6F6;
   --c-invert:      #00906A;
   --c-btn-clear-bg:       #008260;
-  --c-btn-clear-text:     #F9F8F1;
+  --c-btn-clear-text:     #F6F6F6;
   --c-btn-clear-outline:  transparent;
-  --c-btn-save-bg:        #F9F8F1;
+  --c-btn-save-bg:        #F6F6F6;
   --c-btn-save-text:      #00906A;
-  --c-slider-bg:          #F9F8F1;
+  --c-slider-bg:          #F6F6F6;
 }
 
 
@@ -79,7 +79,7 @@ html {
   overflow-x: hidden;
   max-width: 100%;
   min-height: 100%;
-  background-color: #F9F8F1; /* cream — light mode overscroll */
+  background-color: #F6F6F6; /* gray — light mode overscroll */
   transition: background-color 0.4s ease;
 }
 
@@ -99,7 +99,7 @@ body {
 
 html.dark-loading body {
   background-color: #00906A;
-  color: #F9F8F1;
+  color: #F6F6F6;
 }
 
 
@@ -675,7 +675,7 @@ body.dark .portfolio-item {
 }
 
 .portfolio-item-title {
-  color: #F9F8F1;
+  color: #F6F6F6;
   font-size: 16px;
   line-height: 1.3;
 }
@@ -850,6 +850,13 @@ footer {
   margin-bottom: 0.2em;
 }
 
+/* Only relevant on touch/mobile, where the user has to briefly hold
+   still before moving to enter drawing mode (see canvas-draw.js /
+   script.js long-press logic) — hidden on desktop by default. */
+.draw-hint-sub {
+  display: none;
+}
+
 .hero-grid {
   display: flex;
   flex-wrap: wrap;
@@ -977,6 +984,14 @@ footer {
     transform: none;
     bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
     white-space: nowrap;
+    align-items: flex-start; /* keep the arrow next to the top line now that the text wraps to two lines */
+  }
+
+  .draw-hint-sub {
+    display: block;
+    font-size: 13px;
+    margin-top: 0.15em;
+    font-weight: 400;
   }
 
   .teddy-container {
