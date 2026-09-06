@@ -805,6 +805,7 @@ footer {
 
 .hero-intro {
   height: 100vh;
+  height: 100svh; /* mobile browsers: guaranteed-visible height with address bar shown; ignored by older browsers, 100vh above still applies as fallback */
   display: flex;
   align-items: center;
   justify-content: center;
