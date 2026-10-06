@@ -1,9 +1,3 @@
-// ── Constants ─────────────────────────────────────────────────
-
-const GREEN = '#00906A';
-const WHITE = '#F6F6F6';
-
-
 // ── Mobile viewport height fix ──────────────────────────────────
 // `100vh` on mobile browsers is unreliable: some measure the full
 // screen height as if the address bar were already hidden, so
@@ -21,8 +15,26 @@ const setViewportHeightVar = () => {
   document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
 };
 setViewportHeightVar();
-window.addEventListener('resize', setViewportHeightVar);
-window.addEventListener('orientationchange', setViewportHeightVar);
+
+// BUG FIX: on mobile browsers, `resize` doesn't only fire on real size
+// changes — it also fires whenever the address bar hides/shows while
+// scrolling, since that changes `window.innerHeight`. Recomputing --vh
+// on every one of those events made .hero-intro (height: calc(var(--vh)
+// * 100)) grow/shrink live mid-scroll, which looked like the hero text
+// jumping up and down. Real resizes/rotations always change the width
+// too, so only recompute when the width actually changed; orientation
+// changes are still handled explicitly below.
+let lastViewportWidth = window.innerWidth;
+window.addEventListener('resize', () => {
+  if (window.innerWidth !== lastViewportWidth) {
+    lastViewportWidth = window.innerWidth;
+    setViewportHeightVar();
+  }
+});
+window.addEventListener('orientationchange', () => {
+  lastViewportWidth = window.innerWidth;
+  setViewportHeightVar();
+});
 
 
 // Take full control of scroll position on navigation. Without this, the
@@ -35,55 +47,23 @@ if ('scrollRestoration' in history) {
 }
 
 
-// ── Dark Mode: apply immediately to prevent flash ─────────────
-// Reading localStorage and toggling body.dark here (before first paint)
-// prevents the brief white flash when the user has dark mode enabled.
-
-let isMoon = localStorage.getItem('theme') === 'dark';
-if (isMoon) document.body.classList.add('dark');
-
-
 // ── DOM refs ──────────────────────────────────────────────────
 
-const hamburger   = document.getElementById('hamburger');
-const navLinks    = document.getElementById('nav-links');
 const canvas      = document.querySelector('canvas');
 const clearCanvas = document.querySelector('.clear-canvas');
 const saveDrawing = document.querySelector('.save-drawing');
 const ctx         = canvas.getContext('2d');
 
 
-// ── Hamburger ─────────────────────────────────────────────────
-
-hamburger.addEventListener('click', () => {
-  hamburger.classList.toggle('active');
-  navLinks.classList.toggle('active');
-  const menuOpen = navLinks.classList.contains('active');
-  clearCanvas.style.visibility = menuOpen ? 'hidden' : '';
-  saveDrawing.style.visibility = menuOpen ? 'hidden' : '';
-});
-
-navLinks.querySelectorAll('a').forEach(link => {
-  link.addEventListener('click', () => {
-    // Don't close menu for contact trigger or lang switcher
-    if (link.id === 'nav-contact-trigger') return;
-    if (link.closest('.lang-switcher')) return;
-    hamburger.classList.remove('active');
-    navLinks.classList.remove('active');
-    clearCanvas.style.visibility = '';
-    saveDrawing.style.visibility = '';
-  });
-});
-
-
 // ── Drawing state ─────────────────────────────────────────────
 
 let isDrawing    = false;
 let hasDrawn     = false;
-const brushWidth = 2;
+const brushWidth = 2.5;
 
-// Resolve initial draw color from stored theme
-let selectedColor = (localStorage.getItem('theme') === 'dark') ? WHITE : GREEN;
+// Resolve initial draw colour from the current theme
+// (nav.js has already applied body.dark from the saved theme at this point)
+let selectedColor = document.body.classList.contains('dark') ? WHITE : GREEN;
 
 // Offscreen canvas that holds ONLY the user's strokes (transparent bg).
 // On theme-switch we repaint the main canvas background and composite
@@ -169,6 +149,48 @@ bodyResizeObserver.observe(document.body);
 
 // ── Hit-test: only draw over blank areas ──────────────────────
 
+// Finds the on-screen box of the single character closest to (x, y), so
+// we can tell "clicking right on/next to a letter" apart from "clicking
+// somewhere else nearby" — even within the same paragraph. Returns null
+// if there's no text at all under the point.
+const closestGlyphRect = (x, y) => {
+  let range = null;
+  if (document.caretRangeFromPoint) {
+    range = document.caretRangeFromPoint(x, y);
+  } else if (document.caretPositionFromPoint) {
+    const pos = document.caretPositionFromPoint(x, y);
+    if (pos && pos.offsetNode) {
+      range = document.createRange();
+      range.setStart(pos.offsetNode, pos.offset);
+      range.setEnd(pos.offsetNode, pos.offset);
+    }
+  }
+  if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return null;
+
+  const textNode = range.startContainer;
+  const offset = Math.min(range.startOffset, textNode.length - 1);
+  if (offset < 0) return null;
+
+  const charRange = document.createRange();
+  charRange.setStart(textNode, offset);
+  charRange.setEnd(textNode, offset + 1);
+  return charRange.getClientRects()[0] || null;
+};
+
+// A few px of slack so clicking right beside a letter still counts as
+// "on the text", without swallowing the blank space further away — e.g.
+// the padding around a paragraph, or the gap between lines.
+const TEXT_HIT_PADDING = 5;
+
+const isNearText = (x, y) => {
+  const rect = closestGlyphRect(x, y);
+  if (!rect) return false;
+  return (
+    x >= rect.left - TEXT_HIT_PADDING && x <= rect.right + TEXT_HIT_PADDING &&
+    y >= rect.top - TEXT_HIT_PADDING && y <= rect.bottom + TEXT_HIT_PADDING
+  );
+};
+
 const isBlankSpace = (e) => {
   const x = e.clientX ?? e.touches?.[0]?.clientX;
   const y = e.clientY ?? e.touches?.[0]?.clientY;
@@ -180,10 +202,16 @@ const isBlankSpace = (e) => {
 
   if (!underlying) return false;
 
-  return !underlying.closest(
+  if (underlying.closest(
     'nav, .portfolio-item, .portfolio-image, .portfolio-info, ' +
-    '.logo, .nav-links, .lang-switcher, a, footer, button, .st0'
-  );
+    '.logo, .nav-links, .lang-switcher, a, footer, button'
+  )) {
+    return false;
+  }
+
+  // Otherwise fine to draw here — UNLESS the point is right on or next
+  // to an actual letter, which should start a normal text selection.
+  return !isNearText(x, y);
 };
 
 
@@ -222,31 +250,46 @@ const fadeOutIntro = () => {
   setCanvasBackground();
 };
 
+// Loads ONE random intro drawing. Every drawing lives in its own small
+// file (drawings/desktop-<n>.js / mobile-<n>.js, written by
+// bundle-drawings.js) and is pulled in with a <script> tag — that works
+// without a server (file://) and means a visit only downloads one drawing,
+// no matter how many exist. drawings-manifest.js tells us how many there
+// are, so adding drawings only needs `node bundle-drawings.js` to be re-run.
+const loadIntroDrawing = (isMobile) => new Promise((resolve) => {
+  const kind  = isMobile ? 'mobile' : 'desktop';
+  const count = (typeof DRAWINGS_MANIFEST !== 'undefined' && DRAWINGS_MANIFEST[kind]) || 0;
+  if (!count) {
+    console.warn('Intro drawing: no drawings-manifest.js found (or it lists 0 drawings for "' + kind +
+                 '"). Run "node bundle-drawings.js" and upload drawings-manifest.js + the drawings/ folder.');
+    resolve(null);
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.src = `drawings/${kind}-${Math.floor(Math.random() * count)}.js`;
+  script.onload = () => {
+    const strokes = window.__introDrawing || null;
+    if (!strokes) console.warn('Intro drawing: ' + script.src + ' loaded but contains no drawing.');
+    delete window.__introDrawing;
+    script.remove();
+    resolve(strokes);
+  };
+  script.onerror = () => {
+    console.warn('Intro drawing: could not load ' + script.src +
+                 ' — is the drawings/ folder uploaded, and does the manifest match it?');
+    script.remove();
+    resolve(null);
+  };
+  document.head.appendChild(script);
+});
+
 const playIntroDrawing = async () => {
-  const isMobile = window.innerWidth <= 768;
-  let strokes = null;
+  let strokes = await loadIntroDrawing(window.innerWidth <= 768);
 
-  if (typeof DRAWINGS_BUNDLE !== 'undefined') {
-    const pool = isMobile ? DRAWINGS_BUNDLE.mobile : DRAWINGS_BUNDLE.desktop;
-    if (pool && pool.length > 0) {
-      strokes = pool[Math.floor(Math.random() * pool.length)];
-    }
-  }
-
-  if (!strokes) {
-    const folder = isMobile
-      ? 'Startup_Drawings/Mobile_Drawings'
-      : 'Startup_Drawings/Desktop_Drawings';
-    const random = Math.floor(Math.random() * 4) + 1;
-    try {
-      const res = await fetch(`${folder}/drawing-${random}.json`);
-      if (!res.ok) return;
-      strokes = await res.json();
-    } catch {
-      return;
-    }
-  }
-
+  // The file loads asynchronously — if the visitor already started drawing
+  // in the meantime, don't play the intro over their strokes.
+  if (hasDrawn) return;
   if (!strokes || strokes.length === 0) return;
 
   // Normalise timestamps so the first point starts at t=0
@@ -284,14 +327,14 @@ const playIntroDrawing = async () => {
         ctx.beginPath();
         ctx.lineWidth   = brushWidth;
         ctx.strokeStyle = color;
-        ctx.lineCap     = 'round';
+        ctx.lineCap     = 'butt';
         ctx.lineJoin    = 'round';
         ctx.moveTo(pts[0].x * window.innerWidth, pts[0].y * window.innerHeight);
 
         strokeCtx.beginPath();
         strokeCtx.lineWidth   = brushWidth;
         strokeCtx.strokeStyle = '#000';
-        strokeCtx.lineCap     = 'round';
+        strokeCtx.lineCap     = 'butt';
         strokeCtx.lineJoin    = 'round';
         strokeCtx.moveTo(pts[0].x * window.innerWidth, pts[0].y * window.innerHeight);
         i = 0;
@@ -348,7 +391,7 @@ const startDraw = (e) => {
   ctx.moveTo(coords.x, coords.y);
   ctx.lineWidth   = brushWidth;
   ctx.strokeStyle = selectedColor;
-  ctx.lineCap     = 'round';
+  ctx.lineCap     = 'butt';
   ctx.lineJoin    = 'round';
 
   // Stroke-only canvas (always draws in a normalised colour so we can recolour on theme swap)
@@ -356,7 +399,7 @@ const startDraw = (e) => {
   strokeCtx.moveTo(coords.x, coords.y);
   strokeCtx.lineWidth   = brushWidth;
   strokeCtx.strokeStyle = '#000'; // placeholder; redrawn in correct colour on theme swap
-  strokeCtx.lineCap     = 'round';
+  strokeCtx.lineCap     = 'butt';
   strokeCtx.lineJoin    = 'round';
 };
 
@@ -403,6 +446,10 @@ clearCanvas.addEventListener('click', () => {
   hasDrawn = false;
   clearCanvas.classList.remove('visible');
   saveDrawing.classList.remove('visible');
+  // The canvas is empty again — bring the draw-hint back (it's only
+  // hidden once the user actually starts drawing, see startDraw above).
+  const drawHint = document.querySelector('.draw-hint');
+  if (drawHint) drawHint.style.display = '';
 });
 
 saveDrawing.addEventListener('click', () => {
@@ -449,8 +496,7 @@ document.addEventListener('touchstart', (e) => {
 
   longPressTimer = setTimeout(() => {
     if (!touchMoved && isBlankSpace(e)) {
-      longPressActive            = true;
-      canvas.style.touchAction   = 'none';
+      longPressActive = true;
       startDraw(e);
     }
   }, 120);
@@ -469,216 +515,40 @@ document.addEventListener('touchmove', (e) => {
 
 document.addEventListener('touchend', () => {
   clearTimeout(longPressTimer);
-  if (!longPressActive) canvas.style.touchAction = 'auto';
   longPressActive = false;
   stopDrawing();
 });
 
-canvas.style.touchAction = 'auto';
 
+// ── Theme change: repaint background + recolour strokes ────────
+// nav.js toggles body.dark and then calls this, so the canvas stays in
+// sync with the theme (also runs once on page load).
 
-// ── Teddy GIF Hover ───────────────────────────────────────────
-
-const initTeddy = () => {
-  const teddyWrapper = document.querySelector('.teddy-wrapper');
-  const teddySVG     = document.querySelector('#Ebene_1');
-  if (!teddyWrapper || !teddySVG) return;
-
-  teddySVG.querySelectorAll('.st0').forEach(path => {
-    path.addEventListener('mouseenter', () => teddyWrapper.classList.add('teddy-hovered'));
-    path.addEventListener('mouseleave', () => teddyWrapper.classList.remove('teddy-hovered'));
-    path.addEventListener('click',      () => window.open('https://youtu.be/nMmstND8BKY', '_blank', 'noopener'));
-  });
-};
-
-
-// ── Hero scroll animation ─────────────────────────────────────
-
-const heroObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
-      heroObserver.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.2 });
-
-document.querySelectorAll('.hero-item').forEach(item => heroObserver.observe(item));
-
-
-// ── Language switcher slider ──────────────────────────────────
-// Click handling and setLang() calls are owned by i18n.js (DOMContentLoaded).
-// This file is only responsible for moving the slider indicator, which requires
-// layout metrics unavailable to i18n.js at parse time.
-
-const langSlider = document.querySelector('.lang-slider');
-
-// Moves the slider pill. `animated` controls whether the CSS transition fires.
-// Pass animated=false for the initial placement (before first paint) so the
-// pill appears instantly in the right spot rather than sliding in from x=0.
-const moveSlider = (link, animated = true) => {
-  if (!link || !langSlider) return;
-  const apply = () => {
-    langSlider.style.width     = link.offsetWidth + 'px';
-    langSlider.style.transform = `translateX(${link.offsetLeft}px) translateY(-50%)`;
-  };
-  if (animated) {
-    requestAnimationFrame(apply);
-  } else {
-    apply();
-  }
-};
-
-// Register as a callback so i18n.js can trigger slider movement after a click.
-window.__onLangChange = (link) => moveSlider(link, true);
-
-window.addEventListener('resize', () => {
-  const active = document.querySelector('.lang-switcher a.lang-active');
-  if (active) moveSlider(active, true);
-});
-
-
-// ── Hide nav on scroll (homepage) ───────────────────────────────
-// Same accumulator approach as project-nav.js (survives very slow
-// scrolling), but only takes effect once scrolling would carry the nav
-// over the showcase — while still inside the hero section, the nav
-// always stays visible.
-
-let lastScrollY   = window.scrollY;
-let scrollAccum   = 0;
-let scrollDir     = 0; // 1 = down, -1 = up
-const HIDE_THRESHOLD = 40;
-const SHOW_THRESHOLD = 10;
-
-const getWorkOffsetTop = () => document.getElementById('work')?.offsetTop ?? Infinity;
-
-window.addEventListener('scroll', () => {
-  const nav = document.querySelector('nav');
-  if (!nav) return;
-
-  const currentY = window.scrollY;
-  const delta = currentY - lastScrollY;
-  lastScrollY = currentY;
-  if (delta === 0) return;
-
-  const dir = delta > 0 ? 1 : -1;
-  if (dir !== scrollDir) {
-    scrollDir   = dir;
-    scrollAccum = 0;
-  }
-  scrollAccum += Math.abs(delta);
-
-  // Still within the hero (hasn't reached the showcase yet) → nav always visible.
-  if (currentY < getWorkOffsetTop()) {
-    nav.classList.remove('nav-hidden');
-    return;
-  }
-
-  if (dir === 1 && scrollAccum > HIDE_THRESHOLD) {
-    nav.classList.add('nav-hidden');
-    if (hamburger && navLinks) {
-      hamburger.classList.remove('active');
-      navLinks.classList.remove('active');
-    }
-  }
-  if (dir === -1 && scrollAccum > SHOW_THRESHOLD) {
-    nav.classList.remove('nav-hidden');
-  }
-}, { passive: true });
-
-
-// ── Sun / Moon toggle ─────────────────────────────────────────
-
-// BUG FIX: filter out nulls so forEach never throws on missing elements
-const sunIcons = [
-  document.getElementById('theme-icon'),
-  document.getElementById('theme-icon-desktop'),
-].filter(Boolean);
-
-const buildSunContent = (color) => `
-  <circle cx="12" cy="12" r="4" fill="${color}" style="transition: r 0.35s ease;"/>
-  <g stroke="${color}" style="transition: opacity 0.25s ease;">
-    <line x1="12" y1="2"    x2="12" y2="6.5"/>
-    <line x1="12" y1="17.5" x2="12" y2="22"/>
-    <line x1="2"  y1="12"   x2="6.5" y2="12"/>
-    <line x1="17.5" y1="12" x2="22"  y2="12"/>
-    <line x1="4.93"  y1="4.93"  x2="7.88"  y2="7.88"/>
-    <line x1="16.12" y1="16.12" x2="19.07" y2="19.07"/>
-    <line x1="19.07" y1="4.93"  x2="16.12" y2="7.88"/>
-    <line x1="7.88"  y1="16.12" x2="4.93"  y2="19.07"/>
-  </g>
-`;
-
-// BUG FIX: persist dark mode in localStorage and restore it on load.
-// isMoon is already declared and body.dark already applied above.
-
-const applySunIcons = (color) => {
-  sunIcons.forEach(icon => {
-    icon.setAttribute('stroke', color);
-    icon.innerHTML = buildSunContent(color);
-  });
-};
-
-const applyDarkMode = (dark) => {
-  document.body.classList.toggle('dark', dark);
+window.__onThemeChange = (dark) => {
   const color = dark ? WHITE : GREEN;
   selectedColor = color;
+  if (canvas.width === 0) return;
 
-  if (canvas.width > 0) {
-    setCanvasBackground();
-    if ((hasDrawn || introVisible) && strokeCanvas.width > 0) {
-      // Redraw the stored strokes in the new ink colour
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = 1;
-      // Tint the stroke canvas by drawing it through a colour filter:
-      // draw strokes onto a temp canvas filled with new ink colour using destination-in
-      const tinted = document.createElement('canvas');
-      tinted.width  = strokeCanvas.width;
-      tinted.height = strokeCanvas.height;
-      const tc = tinted.getContext('2d');
-      tc.drawImage(strokeCanvas, 0, 0);
-      tc.globalCompositeOperation = 'source-in';
-      tc.fillStyle = color;
-      tc.fillRect(0, 0, tinted.width, tinted.height);
-      ctx.drawImage(tinted, 0, 0);
-      ctx.restore();
-    }
+  setCanvasBackground();
+  if ((hasDrawn || introVisible) && strokeCanvas.width > 0) {
+    // Redraw the stored strokes in the new ink colour: tint a copy of the
+    // stroke-only canvas (source-in keeps its alpha, replaces the colour).
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    const tinted = document.createElement('canvas');
+    tinted.width  = strokeCanvas.width;
+    tinted.height = strokeCanvas.height;
+    const tc = tinted.getContext('2d');
+    tc.drawImage(strokeCanvas, 0, 0);
+    tc.globalCompositeOperation = 'source-in';
+    tc.fillStyle = color;
+    tc.fillRect(0, 0, tinted.width, tinted.height);
+    ctx.drawImage(tinted, 0, 0);
+    ctx.restore();
   }
-
-  const hamburgerIcon = document.querySelector('.plus-icon');
-  if (hamburgerIcon) hamburgerIcon.setAttribute('stroke', color);
-
-  sunIcons.forEach(icon => {
-    icon.setAttribute('stroke', color);
-    const circle = icon.querySelector('circle');
-    const rays   = icon.querySelector('g');
-    if (!circle || !rays) return;
-    circle.setAttribute('fill', color);
-    rays.setAttribute('stroke', color);
-    if (dark) {
-      rays.style.transition = 'opacity 0.2s ease';
-      rays.style.opacity    = '0';
-      circle.setAttribute('r', '10');
-    } else {
-      circle.setAttribute('r', '4');
-      rays.style.transition = 'opacity 0.35s ease 0.1s';
-      rays.style.opacity    = '1';
-    }
-  });
 };
-
-const toggleSun = () => {
-  isMoon = !isMoon;
-  localStorage.setItem('theme', isMoon ? 'dark' : 'light');
-  applyDarkMode(isMoon);
-};
-
-sunIcons.forEach(icon => icon.addEventListener('click', toggleSun));
-
-// Render initial sun icon content before page load event fires
-applySunIcons(isMoon ? WHITE : GREEN);
 
 
 // ── Portfolio data ────────────────────────────────────────────
@@ -725,6 +595,7 @@ const portfolioPanel         = document.getElementById('portfolio-panel');
 const portfolioGrid          = document.getElementById('portfolio-grid');
 
 let activeCategory = 'all';
+let lastCategory   = 'all'; // remembered while the panel is closed, so "Projects" can reopen it
 
 const isMobileLayout = () => window.innerWidth <= 768;
 
@@ -762,14 +633,20 @@ const renderGrid = (category) => {
     // placeholder ratio so the masonry grid still looks lively.
     const title = escapeHtml(item.title);
     const innerStyle = thumb ? '' : ` style="padding-top:${ratio}"`;
-    const thumbImg    = thumb ? `<img src="${escapeHtml(thumb)}" alt="${title}" loading="lazy">` : '';
+    // "loading=lazy" is intentionally NOT used here: every thumbnail in
+    // this grid is already preloaded (see preloadCategoryImages) before
+    // this function ever runs, so the browser has the bytes in hand —
+    // lazy-loading would still withhold layout for off-screen rows until
+    // they scroll into view, undoing the point of preloading them.
+    const thumbImg    = thumb ? `<img src="${escapeHtml(thumb)}" alt="${title}">` : '';
 
     return `
       <a class="portfolio-item" href="project.html?id=${encodeURIComponent(item.slug)}" title="${title}">
         <div class="portfolio-item-inner"${innerStyle}>
           ${thumbImg}
+          <div class="portfolio-item-tint"></div>
           <div class="portfolio-item-overlay">
-            <span class="portfolio-item-title">${title}</span>
+            <span class="portfolio-item-title"><span class="portfolio-item-title-text">${title}</span></span>
           </div>
         </div>
       </a>
@@ -788,9 +665,9 @@ const openPanel = () => {
 // the precise scroll position, not just an approximation of it.
 portfolioGrid.addEventListener('click', (e) => {
   if (e.target.closest('.portfolio-item')) {
-    sessionStorage.setItem('lastPortfolioCategory', activeCategory || 'all');
-    sessionStorage.setItem('lastScrollY', String(window.scrollY));
-    sessionStorage.setItem('cameFromProject', '1');
+    safeSession.set('lastPortfolioCategory', activeCategory || 'all');
+    safeSession.set('lastScrollY', String(window.scrollY));
+    safeSession.set('cameFromProject', '1');
   }
 });
 
@@ -844,6 +721,69 @@ const syncPanelHeightWithImages = () => {
   }))).then(refreshPanelHeight);
 };
 
+// Preloads every thumbnail a category needs via throwaway Image() objects
+// (pure network fetch + decode — nothing here touches the DOM), so that
+// by the time the visible grid is actually swapped in, every image is
+// already in the browser's cache and paints at its full size immediately.
+// This is what stops switching category from visibly collapsing the
+// panel and then re-opening it as thumbnails trickle in: the swap below
+// only ever measures a grid whose images are already loaded, so the
+// height only ever changes once, in one smooth step.
+const preloadCategoryImages = (category) => {
+  const items = portfolioData[category] || [];
+  const srcs = items
+    .map(item => (typeof PROJECTS !== 'undefined' && PROJECTS[item.slug] && PROJECTS[item.slug].hero && PROJECTS[item.slug].hero[0]) || null)
+    .filter(Boolean);
+
+  const loaders = srcs.map(src => new Promise(resolve => {
+    const img = new Image();
+    img.addEventListener('load', resolve, { once: true });
+    img.addEventListener('error', resolve, { once: true });
+    img.src = src;
+  }));
+
+  // Cap the wait so one slow or broken thumbnail can't delay switching
+  // categories indefinitely — past this point we swap with whatever's
+  // ready; syncPanelHeightWithImages() below still catches anything
+  // that missed the window (it only ever grows the panel, which doesn't
+  // move the current scroll position, so no jump either way).
+  const timeout = new Promise(resolve => setTimeout(resolve, 600));
+
+  return Promise.race([Promise.all(loaders), timeout]);
+};
+
+// Swaps the grid to `category`, but only once its thumbnails are already
+// cached — the single entry point every tab/link that changes the active
+// category goes through, so the "flush, then reveal" behaviour is
+// consistent everywhere instead of being duplicated per call site.
+// Returns the promise so callers can chain something (e.g. a scroll) onto
+// "once the grid is actually showing the new category".
+const updatePortfolioContent = (category) => {
+  const wasOpen = portfolioPanel.classList.contains('open');
+
+  return preloadCategoryImages(category).then(() => {
+    renderGrid(category);
+    if (!wasOpen) {
+      openPanel();
+    } else {
+      refreshPanelHeight();
+      syncPanelHeightWithImages();
+    }
+  });
+};
+
+// Marks `tab` as the active one and shows its category (desktop behaviour).
+// Returns the promise from updatePortfolioContent so callers can chain a
+// scroll onto "the grid is now showing".
+const selectTab = (tab) => {
+  portfolioTabs.forEach(t => { t.classList.remove('active'); t.removeAttribute('data-open'); });
+  tab.classList.add('active');
+  tab.setAttribute('data-open', '');
+  activeCategory = tab.dataset.category;
+  updateGridCorner(tab);
+  return updatePortfolioContent(activeCategory);
+};
+
 portfolioTabs.forEach(tab => {
   tab.addEventListener('click', () => {
     const category = tab.dataset.category;
@@ -854,11 +794,9 @@ portfolioTabs.forEach(tab => {
         tab.classList.add('active');
         tab.setAttribute('data-open', '');
         activeCategory = category;
-        renderGrid(category);
         portfolioTabsContainer.classList.remove('mobile-open');
         portfolioTabsContainer.appendChild(tab);
-        if (!portfolioPanel.classList.contains('open')) openPanel();
-        else { refreshPanelHeight(); syncPanelHeightWithImages(); }
+        updatePortfolioContent(category);
         return;
       }
       portfolioTabsContainer.classList.toggle('mobile-open');
@@ -870,18 +808,12 @@ portfolioTabs.forEach(tab => {
       tab.classList.remove('active');
       tab.removeAttribute('data-open');
       closePanel();
+      lastCategory   = activeCategory;
       activeCategory = null;
       return;
     }
 
-    portfolioTabs.forEach(t => { t.classList.remove('active'); t.removeAttribute('data-open'); });
-    tab.classList.add('active');
-    tab.setAttribute('data-open', '');
-    activeCategory = category;
-    renderGrid(category);
-    updateGridCorner(tab);
-    if (!portfolioPanel.classList.contains('open')) openPanel();
-    else { refreshPanelHeight(); syncPanelHeightWithImages(); }
+    selectTab(tab);
   });
 });
 
@@ -901,74 +833,37 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Hero links → filter portfolio by category.
-// Uses event delegation on the stable parent so listeners survive i18n.js
-// replacing the hero paragraph's innerHTML on every language change.
-document.querySelector('.hero-intro')?.addEventListener('click', (e) => {
-  const link = e.target.closest('.hero-link');
-  if (!link) return;
-
-  const category = link.dataset.category;
-  const tab = document.querySelector(`.portfolio-tab[data-category="${category}"]`);
-  if (!tab) return;
-
-  portfolioTabs.forEach(t => { t.classList.remove('active'); t.removeAttribute('data-open'); });
-  tab.classList.add('active');
-  tab.setAttribute('data-open', '');
-  activeCategory = category;
-  renderGrid(category);
-  updateGridCorner(tab);
-  if (!portfolioPanel.classList.contains('open')) openPanel();
-  else { refreshPanelHeight(); syncPanelHeightWithImages(); }
-
-  document.querySelector('#work')?.scrollIntoView({ behavior: 'smooth' });
-});
-
-
 // ── Nav "Projects" link — smooth scroll + ensure panel open ──
+// (menu closing is handled generically by nav.js)
 
 const navWorkLink = document.getElementById('nav-work-link');
 if (navWorkLink) {
   navWorkLink.addEventListener('click', (e) => {
     e.preventDefault();
-    // Make sure the portfolio panel is open
-    if (!portfolioPanel.classList.contains('open')) {
-      const activeTab = document.querySelector('.portfolio-tab.active');
-      if (activeTab) {
-        activeTab.setAttribute('data-open', '');
-        renderGrid(activeCategory || 'all');
-        openPanel();
-      }
+    const scrollToWork = () => document.getElementById('work')?.scrollIntoView({ behavior: 'smooth' });
+
+    if (portfolioPanel.classList.contains('open')) {
+      requestAnimationFrame(scrollToWork);
+      return;
     }
-    // Close mobile menu if open
-    hamburger.classList.remove('active');
-    navLinks.classList.remove('active');
-    clearCanvas.style.visibility = '';
-    saveDrawing.style.visibility = '';
-    // Smooth scroll
-    requestAnimationFrame(() => {
-      document.getElementById('work')?.scrollIntoView({ behavior: 'smooth' });
+
+    // The panel is closed (clicking the active tab closes it): reopen it
+    // with the category that was showing, then scroll once it's rendered.
+    //
+    // The panel must reach its full height BEFORE we scroll: a smooth scroll
+    // fixes its target when it starts, and while the panel is still
+    // collapsed (or mid-animation) the page is too short to reach #work's
+    // top — it would stop lower than when the panel was already open. So
+    // open it without the height animation, scroll, then restore the
+    // transition (same trick as the "returning from a project" path).
+    const tab = document.querySelector(`.portfolio-tab[data-category="${lastCategory}"]`) || portfolioTabs[0];
+    portfolioPanel.style.transition = 'none';
+    selectTab(tab).then(() => {
+      requestAnimationFrame(() => {
+        scrollToWork();
+        requestAnimationFrame(() => { portfolioPanel.style.transition = ''; });
+      });
     });
-  });
-}
-
-
-// ── Nav Contact Icons ─────────────────────────────────────────
-
-const navContactTrigger = document.getElementById('nav-contact-trigger');
-const navContactIcons   = document.getElementById('nav-contact-icons');
-
-if (navContactTrigger && navContactIcons) {
-  navContactTrigger.addEventListener('click', (e) => {
-    e.preventDefault();
-    navContactIcons.classList.toggle('open');
-  });
-
-  // Close icons when clicking anywhere outside the nav-contact-item
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.nav-contact-item')) {
-      navContactIcons.classList.remove('open');
-    }
   });
 }
 
@@ -980,10 +875,6 @@ window.addEventListener('load', () => {
   setCanvasDimensions();
   clearCanvas.classList.remove('visible');
   saveDrawing.classList.remove('visible');
-
-  // Restore dark mode *after* canvas dimensions are set so the
-  // background fill uses the correct colour from the start.
-  applyDarkMode(isMoon);
 
   // Intro playback (skipped in export mode)
   if (!isExportMode) playIntroDrawing();
@@ -1005,17 +896,6 @@ window.addEventListener('load', () => {
     });
   }
 
-  // Teddy
-  initTeddy();
-
-  // Language slider — position synchronously before enabling the CSS transition,
-  // so the pill appears instantly in the right spot on load (no slide-in jump).
-  const activeLink = document.querySelector('.lang-switcher a.lang-active');
-  if (activeLink) moveSlider(activeLink, false);
-  // Enable CSS transition only after the position is painted.
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    if (langSlider) langSlider.classList.add('ready');
-  }));
 
   // Portfolio initial render — if we're coming back from a project page,
   // restore the category the user had open before (instead of always
@@ -1024,10 +904,17 @@ window.addEventListener('load', () => {
   // sessionStorage flag set the moment a project thumbnail is clicked
   // (document.referrer is unreliable/empty for file:// pages, so it
   // can't be used here).
-  const returningToWork  = sessionStorage.getItem('cameFromProject') === '1';
-  sessionStorage.removeItem('cameFromProject');
-  const restoredCategory = returningToWork ? sessionStorage.getItem('lastPortfolioCategory') : null;
-  const restoredScrollY  = returningToWork ? Number(sessionStorage.getItem('lastScrollY')) : null;
+  const returningToWork  = safeSession.get('cameFromProject') === '1';
+  safeSession.remove('cameFromProject');
+  const restoredCategory = returningToWork ? safeSession.get('lastPortfolioCategory') : null;
+  const restoredScrollY  = returningToWork ? Number(safeSession.get('lastScrollY')) : null;
+
+  // Set by the "Projects" nav link on other pages (About, Impressum, Project)
+  // right before navigating here — see nav.js for why a flag + JS
+  // scroll is used instead of a '#work' URL fragment. Only relevant when we
+  // AREN'T already doing the precise pixel-restore above.
+  const scrollToWork = safeSession.get('scrollToWork') === '1';
+  safeSession.remove('scrollToWork');
   const initialCategory  = (restoredCategory && portfolioData[restoredCategory]) ? restoredCategory : 'all';
 
   if (initialCategory !== 'all') {
@@ -1067,5 +954,10 @@ window.addEventListener('load', () => {
       portfolioPanel.style.height = portfolioGrid.scrollHeight + 'px';
       syncPanelHeightWithImages();
     });
+    if (scrollToWork) {
+      requestAnimationFrame(() => {
+        document.getElementById('work')?.scrollIntoView({ behavior: 'smooth' });
+      });
+    }
   }
 });

@@ -6,8 +6,8 @@
 // (.canvas-layer, .tools-board, .clear-canvas, .save-drawing) so nothing
 // about the page layout changes.
 //
-// Relies on GREEN / WHITE / isMoon / applyDarkMode already declared by
-// project-nav.js — load this file AFTER project-nav.js.
+// Needs GREEN / WHITE from common.js, and nav.js (loaded BEFORE this file)
+// to call window.__onThemeChange(dark) after every theme switch.
 
 (function () {
   const canvas = document.querySelector('.canvas-layer canvas');
@@ -23,9 +23,9 @@
 
   let isDrawing = false;
   let hasDrawn  = false;
-  const brushWidth = 2;
+  const brushWidth = 2.5;
 
-  let selectedColor = (typeof isMoon !== 'undefined' && isMoon) ? WHITE : GREEN;
+  let selectedColor = document.body.classList.contains('dark') ? WHITE : GREEN;
 
   // Offscreen canvas holding ONLY the user's strokes (transparent bg).
   // Used to (a) recolour strokes on theme switch and (b) find the
@@ -102,6 +102,48 @@
 
   // ── Hit-test: only draw over blank areas ──────────────────────
 
+  // Finds the on-screen box of the single character closest to (x, y),
+  // so we can tell "clicking right on/next to a letter" apart from
+  // "clicking somewhere else nearby" — even within the same paragraph.
+  // Returns null if there's no text at all under the point.
+  const closestGlyphRect = (x, y) => {
+    let range = null;
+    if (document.caretRangeFromPoint) {
+      range = document.caretRangeFromPoint(x, y);
+    } else if (document.caretPositionFromPoint) {
+      const pos = document.caretPositionFromPoint(x, y);
+      if (pos && pos.offsetNode) {
+        range = document.createRange();
+        range.setStart(pos.offsetNode, pos.offset);
+        range.setEnd(pos.offsetNode, pos.offset);
+      }
+    }
+    if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return null;
+
+    const textNode = range.startContainer;
+    const offset = Math.min(range.startOffset, textNode.length - 1);
+    if (offset < 0) return null;
+
+    const charRange = document.createRange();
+    charRange.setStart(textNode, offset);
+    charRange.setEnd(textNode, offset + 1);
+    return charRange.getClientRects()[0] || null;
+  };
+
+  // A few px of slack so clicking right beside a letter still counts as
+  // "on the text", without swallowing the blank space further away —
+  // e.g. the padding around a paragraph, or the gap between lines.
+  const TEXT_HIT_PADDING = 5;
+
+  const isNearText = (x, y) => {
+    const rect = closestGlyphRect(x, y);
+    if (!rect) return false;
+    return (
+      x >= rect.left - TEXT_HIT_PADDING && x <= rect.right + TEXT_HIT_PADDING &&
+      y >= rect.top - TEXT_HIT_PADDING && y <= rect.bottom + TEXT_HIT_PADDING
+    );
+  };
+
   const isBlankSpace = (e) => {
     const x = e.clientX ?? e.touches?.[0]?.clientX;
     const y = e.clientY ?? e.touches?.[0]?.clientY;
@@ -113,9 +155,15 @@
 
     if (!underlying) return false;
 
-    return !underlying.closest(
+    if (underlying.closest(
       'nav, .logo, .nav-links, .lang-switcher, a, footer, button, .project-hero-slideshow'
-    );
+    )) {
+      return false;
+    }
+
+    // Otherwise fine to draw here — UNLESS the point is right on or next
+    // to an actual letter, which should start a normal text selection.
+    return !isNearText(x, y);
   };
 
   // ── Drawing ───────────────────────────────────────────────────
@@ -141,14 +189,14 @@
     ctx.moveTo(coords.x, coords.y);
     ctx.lineWidth   = brushWidth;
     ctx.strokeStyle = selectedColor;
-    ctx.lineCap     = 'round';
+    ctx.lineCap     = 'butt';
     ctx.lineJoin    = 'round';
 
     strokeCtx.beginPath();
     strokeCtx.moveTo(coords.x, coords.y);
     strokeCtx.lineWidth   = brushWidth;
     strokeCtx.strokeStyle = '#000'; // placeholder colour, recoloured on theme swap
-    strokeCtx.lineCap     = 'round';
+    strokeCtx.lineCap     = 'butt';
     strokeCtx.lineJoin    = 'round';
   };
 
@@ -245,8 +293,7 @@
 
       longPressTimer = setTimeout(() => {
         if (!touchMoved && isBlankSpace(e)) {
-          longPressActive          = true;
-          canvas.style.touchAction = 'none';
+          longPressActive = true;
           startDraw(e);
         }
       }, 120);
@@ -273,7 +320,6 @@
   document.addEventListener('pointerup', (e) => {
     if (e.pointerType === 'touch') {
       clearTimeout(longPressTimer);
-      if (!longPressActive) canvas.style.touchAction = 'auto';
       longPressActive = false;
     }
     stopDrawing();
@@ -285,10 +331,8 @@
     stopDrawing();
   });
 
-  canvas.style.touchAction = 'auto';
-
   // ── Dark mode: repaint background + recolour strokes ──────────
-  // project-nav.js calls window.__onThemeChange(dark) right after it
+  // nav.js calls window.__onThemeChange(dark) right after it
   // toggles body.dark, so the canvas stays in sync with the theme switch.
 
   window.__onThemeChange = (dark) => {
@@ -313,18 +357,6 @@
       ctx.restore();
     }
   };
-
-  // ── Hide clear/save buttons while the mobile nav menu is open ──
-
-  const hamburger = document.getElementById('hamburger');
-  const navLinks  = document.getElementById('nav-links');
-  if (hamburger && navLinks) {
-    hamburger.addEventListener('click', () => {
-      const menuOpen = navLinks.classList.contains('active');
-      clearCanvasBtn.style.visibility = menuOpen ? 'hidden' : '';
-      saveDrawingBtn.style.visibility = menuOpen ? 'hidden' : '';
-    });
-  }
 
   // ── Initialise ─────────────────────────────────────────────────
   // No intro drawing here — canvas starts blank.
