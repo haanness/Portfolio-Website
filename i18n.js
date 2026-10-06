@@ -9,9 +9,8 @@ const TRANSLATIONS = {
     'nav.work': 'Projects',
 
     // Hero
-    'hero.intro': 'Hi! I\'m a <a class="hero-link" data-category="graphic-design">Graphic Designer</a>, <a class="hero-link" data-category="paintings-drawings">Illustrator</a> and <a class="hero-link" data-category="animation">Filmmaker</a> from South Tyrol.',
-    'hero.draw': 'Draw Something<span class="draw-hint-sub">(move slowly)</span>',
-    'hero.trailer': '<span class="trailer-line1">Watch the trailer of my</span><span class="trailer-line2"> animated shortfilm</span>',
+    'hero.h1': 'Hannes Oberparleiter — Graphic Designer, Illustrator and Filmmaker from South Tyrol',
+    'hero.draw': 'Draw Something<span class="draw-hint-sub">Tap & Hold to Draw</span>',
 
     // Portfolio tabs
     'tab.all': 'All Projects',
@@ -20,7 +19,6 @@ const TRANSLATIONS = {
     'tab.paintings-drawings': 'Paintings & Drawings',
 
     // Footer
-    'footer.rights': '© 2026 Hannes Oberparleiter. All rights reserved.',
     'footer.impressum': 'Imprint',
     'footer.email': 'Email',
     'footer.phone': 'Mobile',
@@ -29,27 +27,18 @@ const TRANSLATIONS = {
     'btn.clear': 'Clear Canvas',
     'btn.save': 'Save Drawing',
 
-    'about.title': 'About',
-    'about.intro': 'Hi, I\'m Hannes — a graphic designer, illustrator and filmmaker from Kaltern in South Tyrol. I studied Communication Design at the University of Applied Arts Vienna (Mag.Art.) and have been working as a freelance graphic designer since 2020.',
+    'about.popup.text': 'I\'m Hannes: <br><br>graphic designer, animation filmmaker, illustrator, digital painter, pizza maker and eater, hiker, climber, occasional graffiti artist, Mag. art., accordion player, hockey fan, and van traveler.<br><br>Feel free to reach out for projects, collaborations, or anything else!',
 
-    // Impressum page
+    // Impressum page (minimum required by Art. 7 D.Lgs. 70/2003)
     'impressum.title': 'Imprint',
-    'impressum.info': 'Information according to § 5 ECG',
     'impressum.name': 'Hannes Oberparleiter',
-    'impressum.address': 'Obere Viaduktgasse 4/25',
-    'impressum.city': '1030 Vienna',
-    'impressum.country': 'Austria',
-    'impressum.contact.title': 'Contact',
-    'impressum.email': 'hannes.oberparleiter@gmail.com',
-    'impressum.phone': '+39 346 372 7773',
-    'impressum.liability.title': 'Liability for Content',
-    'impressum.liability.text': 'The contents of this website have been created with the greatest care. However, no guarantee can be given for the accuracy, completeness, and topicality of the content. As a service provider, we are responsible for our own content on these pages in accordance with general law (§ 7 para. 1 TMG). According to §§ 8 to 10 TMG, however, we are not obligated to monitor transmitted or stored third-party information or to investigate circumstances that indicate illegal activity.',
-    'impressum.links.title': 'Liability for Links',
-    'impressum.links.text': 'Our offer contains links to external third-party websites, the contents of which we have no influence over. Therefore, we cannot assume any liability for these external contents. The respective provider or operator of the linked pages is always responsible for the content of the linked pages.',
-    'impressum.copyright.title': 'Copyright',
-    'impressum.copyright.text': 'The content and works created by the website operator on these pages are subject to Austrian copyright law. Reproduction, editing, distribution, and any form of utilization outside the limits of copyright require the written consent of the respective author or creator.',
+    'impressum.role': 'Graphic Designer and Visual Artist',
+    'impressum.address': 'Oberplanitzing 13A',
+    'impressum.city': '39052 Kaltern an der Weinstraße',
+    'impressum.country': 'Italy',
+    'impressum.vat': 'Partita IVA: 03362230215',
+    'impressum.email': 'hello@hannesoberparleiter.com',
 
-    // Project page
     'project.watchTrailer': 'Watch Trailer',
     'project.image': 'Image',
   },
@@ -59,16 +48,14 @@ const TRANSLATIONS = {
     'nav.about': 'Über mich',
     'nav.work': 'Projekte',
 
-    'hero.intro': 'Hallo! Ich bin <a class="hero-link" data-category="graphic-design">Grafikdesigner</a>, <a class="hero-link" data-category="paintings-drawings">Illustrator</a> und <a class="hero-link" data-category="animation">Filmemacher</a> aus Südtirol.',
-    'hero.draw': 'Zeichne etwas<span class="draw-hint-sub">(langsam bewegen)</span>',
-    'hero.trailer': '<span class="trailer-line1">Schau dir den Trailer meines</span><span class="trailer-line2"> Animationskurzfilms an</span>',
+    'hero.h1': 'Hannes Oberparleiter — Grafikdesigner, Illustrator und Filmemacher aus Südtirol',
+    'hero.draw': 'Zeichne etwas<span class="draw-hint-sub">Tippen & halten zum Zeichnen</span>',
 
     'tab.all': 'Alle Projekte',
     'tab.graphic-design': 'Grafikdesign',
     'tab.animation': 'Animation',
     'tab.paintings-drawings': 'Malerei & Zeichnungen',
 
-    'footer.rights': '© 2026 Hannes Oberparleiter. Alle Rechte vorbehalten.',
     'footer.impressum': 'Impressum',
     'footer.email': 'E-Mail',
     'footer.phone': 'Mobil',
@@ -76,24 +63,16 @@ const TRANSLATIONS = {
     'btn.clear': 'Löschen',
     'btn.save': 'Speichern',
 
-    'about.title': 'Über mich',
-    'about.intro': 'Hallo, ich bin Hannes — Grafikdesigner, Illustrator und Filmemacher aus Kaltern in Südtirol. Ich habe Kommunikationsdesign an der Universität für Angewandte Kunst Wien studiert (Mag.Art.) und arbeite seit 2020 als freiberuflicher Grafikdesigner.',
+    'about.popup.text': 'Ich bin Hannes:<br><br>Grafikdesigner, Animationsfilmemacher, Zeichner, digitaler Maler, Pizzabäcker und -esser, Wanderer, Kletterer, Gelegenheitssprayer, Mag. art., Ziehharmonika-Zieher, Hockeyfan und Van-Urlauber.<br><br>Melde dich gern für Projekte, Kollaborationen oder Sonstigem!',
 
     'impressum.title': 'Impressum',
-    'impressum.info': 'Angaben gemäß § 5 ECG',
     'impressum.name': 'Hannes Oberparleiter',
-    'impressum.address': 'Obere Viaduktgasse 4/25',
-    'impressum.city': '1030 Wien',
-    'impressum.country': 'Österreich',
-    'impressum.contact.title': 'Kontakt',
-    'impressum.email': 'hannes.oberparleiter@gmail.com',
-    'impressum.phone': '+39 346 372 7773',
-    'impressum.liability.title': 'Haftung für Inhalte',
-    'impressum.liability.text': 'Die Inhalte dieser Website wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte kann jedoch keine Gewähr übernommen werden. Als Diensteanbieter sind wir gemäß den allgemeinen Gesetzen für eigene Inhalte auf diesen Seiten verantwortlich (§ 7 Abs. 1 TMG). Gemäß §§ 8 bis 10 TMG sind wir jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen.',
-    'impressum.links.title': 'Haftung für Links',
-    'impressum.links.text': 'Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich.',
-    'impressum.copyright.title': 'Urheberrecht',
-    'impressum.copyright.text': 'Die durch den Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem österreichischen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers.',
+    'impressum.role': 'Grafiker und visueller Künstler',
+    'impressum.address': 'Oberplanitzing 13A',
+    'impressum.city': '39052 Kaltern an der Weinstraße',
+    'impressum.country': 'Italien',
+    'impressum.vat': 'Partita IVA: 03362230215',
+    'impressum.email': 'hello@hannesoberparleiter.com',
 
     'project.watchTrailer': 'Trailer ansehen',
     'project.image': 'Bild',
@@ -104,16 +83,14 @@ const TRANSLATIONS = {
     'nav.about': 'Chi sono',
     'nav.work': 'Progetti',
 
-    'hero.intro': 'Ciao! Sono un <a class="hero-link" data-category="graphic-design">Graphic Designer</a>, <a class="hero-link" data-category="paintings-drawings">Illustratore</a> e <a class="hero-link" data-category="animation">Filmmaker</a> dell\'Alto Adige.',
-    'hero.draw': 'Disegna qualcosa<span class="draw-hint-sub">(muovi lentamente)</span>',
-    'hero.trailer': '<span class="trailer-line1">Guarda il trailer del mio</span><span class="trailer-line2"> cortometraggio animato</span>',
+    'hero.h1': 'Hannes Oberparleiter — Graphic Designer, Illustratore e Filmmaker dell\'Alto Adige',
+    'hero.draw': 'Disegna qualcosa<span class="draw-hint-sub">Tocca e tieni premuto per disegnare</span>',
 
     'tab.all': 'Tutti i progetti',
     'tab.graphic-design': 'Graphic Design',
     'tab.animation': 'Animazione',
     'tab.paintings-drawings': 'Pitture & Disegni',
 
-    'footer.rights': '© 2026 Hannes Oberparleiter. Tutti i diritti riservati.',
     'footer.impressum': 'Note legali',
     'footer.email': 'Email',
     'footer.phone': 'Cellulare',
@@ -121,24 +98,16 @@ const TRANSLATIONS = {
     'btn.clear': 'Cancella',
     'btn.save': 'Salva disegno',
 
-    'about.title': 'Chi sono',
-    'about.intro': 'Ciao, sono Hannes — graphic designer, illustratore e filmmaker di Caldaro, in Alto Adige. Ho studiato Design della Comunicazione all\'Università delle Arti Applicate di Vienna (Mag.Art.) e lavoro come graphic designer freelance dal 2020.',
+    'about.popup.text': 'Sono Hannes: <br><br>grafico, filmmaker d\'animazione, disegnatore, pittore digitale, pizzaiolo amatoriale, scalatore, writer occasionale, Mag. art., suonatore di fisarmonica, tifoso di hockey su ghiaccio e amante delle vacanze in furgone.<br><br>Contattami pure per progetti, collaborazioni o altro!',
 
     'impressum.title': 'Note legali',
-    'impressum.info': 'Informazioni ai sensi del § 5 ECG',
     'impressum.name': 'Hannes Oberparleiter',
-    'impressum.address': 'Obere Viaduktgasse 4/25',
-    'impressum.city': '1030 Vienna',
-    'impressum.country': 'Austria',
-    'impressum.contact.title': 'Contatto',
-    'impressum.email': 'hannes.oberparleiter@gmail.com',
-    'impressum.phone': '+39 346 372 7773',
-    'impressum.liability.title': 'Responsabilità per i contenuti',
-    'impressum.liability.text': 'I contenuti di questo sito web sono stati creati con la massima cura. Tuttavia, non è possibile garantire l\'accuratezza, la completezza e l\'attualità dei contenuti. Come fornitore di servizi, siamo responsabili dei nostri contenuti su queste pagine conformemente alle leggi generali.',
-    'impressum.links.title': 'Responsabilità per i link',
-    'impressum.links.text': 'La nostra offerta contiene link a siti web di terze parti, sui cui contenuti non abbiamo alcuna influenza. Pertanto non possiamo assumere alcuna responsabilità per questi contenuti esterni. Il rispettivo fornitore o operatore delle pagine collegate è sempre responsabile del contenuto delle pagine collegate.',
-    'impressum.copyright.title': 'Copyright',
-    'impressum.copyright.text': 'I contenuti e le opere creati dall\'operatore del sito su queste pagine sono soggetti alla legge austriaca sul diritto d\'autore. La riproduzione, la modifica, la distribuzione e qualsiasi forma di utilizzo al di fuori dei limiti del diritto d\'autore richiedono il consenso scritto del rispettivo autore o creatore.',
+    'impressum.role': 'Grafico e artista visivo',
+    'impressum.address': 'Via Pianizza di Sopra 13A',
+    'impressum.city': '39052 Caldaro sulla Strada del Vino',
+    'impressum.country': 'Italia',
+    'impressum.vat': 'Partita IVA: 03362230215',
+    'impressum.email': 'hello@hannesoberparleiter.com',
 
     'project.watchTrailer': 'Guarda il trailer',
     'project.image': 'Immagine',
@@ -166,8 +135,9 @@ function detectBrowserLang() {
 }
 
 // A saved choice (the user explicitly picked a language before) always
-// wins; only first-time visitors get the browser-based guess.
-let currentLang = localStorage.getItem('lang') || detectBrowserLang();
+// wins (if it is still a supported language); only first-time visitors get the browser-based guess.
+const savedLang = safeLocal.get('lang');
+let currentLang = SUPPORTED_LANGS.includes(savedLang) ? savedLang : detectBrowserLang();
 
 function t(key) {
   return TRANSLATIONS[currentLang]?.[key] ?? TRANSLATIONS['en']?.[key] ?? key;
@@ -175,15 +145,7 @@ function t(key) {
 
 function applyTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.dataset.i18n;
-    const val = t(key);
-    if (val !== undefined) el.innerHTML = val;
-  });
-
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    const key = el.dataset.i18nPlaceholder;
-    const val = t(key);
-    if (val !== undefined) el.placeholder = val;
+    el.innerHTML = t(el.dataset.i18n);
   });
 
   document.documentElement.lang = currentLang;
@@ -191,11 +153,16 @@ function applyTranslations() {
 
 function setLang(lang) {
   currentLang = lang;
-  localStorage.setItem('lang', lang);
+  safeLocal.set('lang', lang);
   applyTranslations();
+  // Pages with language-dependent content that i18n.js can't translate by
+  // itself (e.g. project.html) listen for this.
+  document.dispatchEvent(new CustomEvent('langchange', { detail: { lang } }));
 }
 
 // ── Slider positioning ────────────────────────────────────────
+// The language pill is owned entirely by this file (initial placement,
+// clicks, resize) — nav.js and script.js don't touch it.
 // Must run after fonts and layout are fully rendered.
 // We wait for window 'load' (all resources), then an extra rAF
 // to ensure the browser has painted with the correct font metrics.
@@ -225,8 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.lang-switcher a').forEach(l => l.classList.remove('lang-active'));
       a.classList.add('lang-active');
       setLang(lang);
-      // Notify slider (registered by script.js or project-nav.js)
-      if (typeof window.__onLangChange === 'function') window.__onLangChange(a);
+      positionSliderForActive();
     });
   });
 });
@@ -238,11 +204,17 @@ window.addEventListener('load', () => {
     a.classList.toggle('lang-active', a.dataset.lang === currentLang);
   });
 
-  // Two rAFs: first ensures layout, second ensures paint
+  // Place the pill IMMEDIATELY, while the CSS transition is still off, so it
+  // appears in the right spot instead of animating in from its start position.
+  positionSliderForActive();
+  // If the web font swaps in after this, re-measure (still without transition).
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(positionSliderForActive);
+
+  // Only enable the transition after the pill has been painted in place
+  // (two rAFs: first ensures layout, second ensures paint).
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    positionSliderForActive();
     const slider = document.querySelector('.lang-slider');
-    if (slider) slider.classList.add('ready'); // enable CSS transition only now
+    if (slider) slider.classList.add('ready');
   }));
 });
 

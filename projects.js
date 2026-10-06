@@ -36,7 +36,7 @@ const PROJECTS = {
         'Zudem soll nachempfindbar gemacht werden, was es bedeuten kann, in einer Gesellschaft, in der es angeblich „jede:r schaffen kann“, machtlos zu sein, festzustecken und zu scheitern.',
       ],
       it: [
-        '„Washed Out” è un cortometraggio animato che affronta il tema del fallimento e della mancanza di controllo. Cinque storie narrate in parallelo descrivono diverse situazioni di vita. L\'elemento che le accomuna è il motivo dell\'essere „bloccati”. I personaggi non riescono ad andare avanti, paralizzati dalle circostanze o da se stessi.',
+        '«Washed Out» è un cortometraggio animato che affronta il tema del fallimento e della mancanza di controllo. Cinque storie narrate in parallelo descrivono diverse situazioni di vita. L\'elemento che le accomuna è il motivo dell\'essere «bloccati». I personaggi non riescono ad andare avanti, paralizzati dalle circostanze o da se stessi.',
         'A ciò si contrappongono i consigli di vita impartiti da coach motivazionali sotto forma di frammenti audio tratti da brevi video, che ripropongono il racconto comune del percorso individualistico verso la felicità e il successo. L\'obiettivo è mettere in luce le tensioni tra i problemi complessi delle situazioni di vita reali e le risposte inadeguate fornite dai contenuti dei social media individualistici.',
         'Inoltre, il film permette di immedesimarsi in ciò che può significare sentirsi impotenti, bloccati e falliti in una società in cui, presumibilmente, chiunque può farcela.',
       ],
@@ -80,10 +80,10 @@ const PROJECTS = {
         'This series of digital paintings is united by the motif of the house entrance. It is about understanding a space between inside and outside that, no matter how often you pass through it, always feels unfamiliar. The realistic digital rendering of these non-places deliberately plays with the aesthetics of a low-quality cell phone photo. Through this everyday, unstaged perspective, the motifs become more real and invite reflection on the otherwise unnoticed.',
       ],
       de: [
-        'Diese Serie aus digitalen Malereien ist verbunden durch das Motiv des Hauseingangs. Es ging um das Verstehen eines Raums zwischen drinnen uns draußen, der sich egal wie oft man ihn durchquert immer fremd anfühlt. Die realistische digitale Ausarbeitung dieser nicht-Orte spielt bewusst mit der Ästhetik eines Handyfotos mit schlechter Qualität. Durch diesen alltäglichen, uninszenierten Blick werden die Motive realer und laden zur Reflexion über das sonst nicht wahrgenommene ein.',
+        'Diese Serie aus digitalen Malereien ist verbunden durch das Motiv des Hauseingangs. Es ging um das Verstehen eines Raums zwischen drinnen und draußen, der sich egal wie oft man ihn durchquert immer fremd anfühlt. Die realistische digitale Ausarbeitung dieser nicht-Orte spielt bewusst mit der Ästhetik eines Handyfotos mit schlechter Qualität. Durch diesen alltäglichen, uninszenierten Blick werden die Motive realer und laden zur Reflexion über das sonst nicht wahrgenommene ein.',
       ],
       it: [
-        'Questa serie di dipinti digitali è connessa dal motivo del soggetto dell\'entrata di casa. L\'obiettivo era comprendere uno spazio tra l\'interno e l\'esterno che, indipendentemente da quante volte lo si attraversi, sembra sempre estraneo. La realistica elaborazione digitale di questi non-luoghi gioca volutamente con l\'estetica di una foto scattata con un cellulare di scarsa qualità. Attraverso questo sguardo quotidiano e non in posa, i soggetti diventano più reali e invitano a riflettere su ciò che altrimenti non verrebbe percepito.',
+        'Questa serie di dipinti digitali è connessa dal motivo dell\'ingresso di casa. L\'obiettivo era comprendere uno spazio tra l\'interno e l\'esterno che, indipendentemente da quante volte lo si attraversi, sembra sempre estraneo. La realistica elaborazione digitale di questi non-luoghi gioca volutamente con l\'estetica di una foto scattata con un cellulare di scarsa qualità. Attraverso questo sguardo quotidiano e non in posa, i soggetti diventano più reali e invitano a riflettere su ciò che altrimenti non verrebbe percepito.',
       ],
     },
     hero: [

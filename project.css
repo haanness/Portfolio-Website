@@ -72,20 +72,6 @@ body.dark .slideshow-placeholder {
   background: #008260;
 }
 
-.placeholder-label {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  color: var(--c-text);
-  opacity: 0.45;
-  pointer-events: none;
-  text-align: center;
-  padding: 1rem;
-}
-
 /* ── Text content ───────────────────────────────────────────── */
 
 .project-content {
@@ -133,7 +119,7 @@ body.dark .slideshow-placeholder {
   gap: 6px;
   line-height: 1;
   cursor: pointer;
-  padding: 5px 9px 3px;
+  padding: 4px 9px 4px;
   border-radius: 4px;
   font-size: 18px;
   font-weight: 400;
@@ -143,6 +129,7 @@ body.dark .slideshow-placeholder {
   background: var(--c-btn-save-bg);
   color: var(--c-btn-save-text);
   transition: background-color 0.4s ease, color 0.4s ease;
+  transform: translateY(2px);
 }
 
 /* The universal `*` reset in styles.css sets font-family directly on
@@ -198,12 +185,10 @@ body.dark .project-trailer-link .trailer-link-text {
 }
 
 .credit-name {
-  font-weight: 700;
   color: var(--c-text);
 }
 
 .credit-role {
-  font-weight: 400;
   color: var(--c-text);
 }
 
