@@ -250,14 +250,50 @@ const fadeOutIntro = () => {
   setCanvasBackground();
 };
 
-// Loads ONE random intro drawing. Every drawing lives in its own small
-// file (drawings/desktop-<n>.js / mobile-<n>.js, written by
+// Picks which drawing to show: random, but never one this browser has already
+// seen — reloading the page steps through all of them before any comes back.
+// Once every drawing has been shown, a new round starts (and the drawing that
+// ended the last round isn't shown first again). The "seen" list lives in
+// localStorage; if storage is blocked this simply degrades to plain random.
+//
+// It is stored together with a fingerprint of the current drawing set, so
+// after you add/remove drawings (and re-run bundle-drawings.js) the numbers
+// no longer match and the list starts fresh instead of skipping the wrong ones.
+const pickIntroIndex = (kind, count) => {
+  const names = (typeof DRAWINGS_SOURCES !== 'undefined' && DRAWINGS_SOURCES[kind]) || [];
+  const signature = names.length ? names.join('|') : String(count);
+  const key = 'introSeen:' + kind;
+  const range = [...Array(count).keys()];
+
+  let seen = [];
+  try {
+    const saved = JSON.parse(safeLocal.get(key) || 'null');
+    if (saved && saved.signature === signature && Array.isArray(saved.seen)) {
+      seen = saved.seen.filter(i => Number.isInteger(i) && i >= 0 && i < count);
+    }
+  } catch { /* corrupt entry — start fresh */ }
+
+  let pool = range.filter(i => !seen.includes(i));
+  if (pool.length === 0) {                       // everything seen → new round
+    const last = seen[seen.length - 1];
+    seen = [];
+    pool = range.filter(i => i !== last);
+    if (pool.length === 0) pool = range;         // only one drawing exists
+  }
+
+  const index = pool[Math.floor(Math.random() * pool.length)];
+  seen.push(index);
+  safeLocal.set(key, JSON.stringify({ signature, seen }));
+  return index;
+};
+
+// Loads ONE intro drawing. Every drawing lives in its own small
+// file (drawings/desktop/<n>.js / drawings/mobile/<n>.js, written by
 // bundle-drawings.js) and is pulled in with a <script> tag — that works
 // without a server (file://) and means a visit only downloads one drawing,
 // no matter how many exist. drawings-manifest.js tells us how many there
 // are, so adding drawings only needs `node bundle-drawings.js` to be re-run.
-const loadIntroDrawing = (isMobile) => new Promise((resolve) => {
-  const kind  = isMobile ? 'mobile' : 'desktop';
+const loadIntroDrawing = (kind) => new Promise((resolve) => {
   const count = (typeof DRAWINGS_MANIFEST !== 'undefined' && DRAWINGS_MANIFEST[kind]) || 0;
   if (!count) {
     console.warn('Intro drawing: no drawings-manifest.js found (or it lists 0 drawings for "' + kind +
@@ -267,7 +303,7 @@ const loadIntroDrawing = (isMobile) => new Promise((resolve) => {
   }
 
   const script = document.createElement('script');
-  script.src = `drawings/${kind}-${Math.floor(Math.random() * count)}.js`;
+  script.src = `drawings/${kind}/${pickIntroIndex(kind, count)}.js`;
   script.onload = () => {
     const strokes = window.__introDrawing || null;
     if (!strokes) console.warn('Intro drawing: ' + script.src + ' loaded but contains no drawing.');
@@ -284,8 +320,41 @@ const loadIntroDrawing = (isMobile) => new Promise((resolve) => {
   document.head.appendChild(script);
 });
 
+// Drawings are stored as fractions of the window (x / width, y / height), so
+// they only look right on a window shaped like the one they were recorded in.
+// REF_ASPECT is that shape (width ÷ height) for each set — set it to the
+// window you drew in. Windows within TOLERANCE of it are simply stretched
+// (invisible); anything more different (an iPad, an ultrawide, a phone held
+// sideways) gets the drawing fitted into a centred box with the recorded
+// proportions instead of being squashed.
+const INTRO_REF_ASPECT = { desktop: 16 / 10, mobile: 9 / 19.5 };
+const INTRO_ASPECT_TOLERANCE = 1.15;
+
+// Portrait windows (phones, tablets held upright) get the mobile set,
+// landscape ones the desktop set — rather than guessing by width alone,
+// which sent portrait iPads (820px wide) to the desktop set.
+const introKind = () => (window.innerWidth < window.innerHeight ? 'mobile' : 'desktop');
+
+// The area of the window the drawing is mapped onto: { x, y, w, h } in CSS px.
+const introBox = (kind) => {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const ref = INTRO_REF_ASPECT[kind], tol = INTRO_ASPECT_TOLERANCE;
+  const aspect    = vw / vh;
+  const boxAspect = Math.min(Math.max(aspect, ref / tol), ref * tol);
+  const w = boxAspect < aspect ? vh * boxAspect : vw;  // window too wide → narrower box
+  const h = boxAspect > aspect ? vw / boxAspect : vh;  // window too tall → shorter box
+  return { x: (vw - w) / 2, y: (vh - h) / 2, w, h };
+};
+
+// One drawing per page view and kind: when the intro restarts (the window
+// was resized) it replays the SAME drawing instead of loading — and using up —
+// another one.
+const introDrawingCache = {};
+
 const playIntroDrawing = async () => {
-  let strokes = await loadIntroDrawing(window.innerWidth <= 768);
+  const kind = introKind();
+  introDrawingCache[kind] ||= loadIntroDrawing(kind);
+  let strokes = await introDrawingCache[kind];
 
   // The file loads asynchronously — if the visitor already started drawing
   // in the meantime, don't play the intro over their strokes.
@@ -300,6 +369,10 @@ const playIntroDrawing = async () => {
 
   introPlaying = true;
   introVisible = true;
+
+  const box = introBox(kind);
+  const toX = (p) => box.x + p.x * box.w;
+  const toY = (p) => box.y + p.y * box.h;
 
   // Mirror intro strokes onto strokeCanvas so theme switches can re-tint them.
   syncStrokeCanvas();
@@ -329,21 +402,21 @@ const playIntroDrawing = async () => {
         ctx.strokeStyle = color;
         ctx.lineCap     = 'butt';
         ctx.lineJoin    = 'round';
-        ctx.moveTo(pts[0].x * window.innerWidth, pts[0].y * window.innerHeight);
+        ctx.moveTo(toX(pts[0]), toY(pts[0]));
 
         strokeCtx.beginPath();
         strokeCtx.lineWidth   = brushWidth;
         strokeCtx.strokeStyle = '#000';
         strokeCtx.lineCap     = 'butt';
         strokeCtx.lineJoin    = 'round';
-        strokeCtx.moveTo(pts[0].x * window.innerWidth, pts[0].y * window.innerHeight);
+        strokeCtx.moveTo(toX(pts[0]), toY(pts[0]));
         i = 0;
       }
 
       while (i >= 0 && i < pts.length - 1 && pts[i + 1].t <= elapsed) {
-        ctx.lineTo(pts[i + 1].x * window.innerWidth, pts[i + 1].y * window.innerHeight);
+        ctx.lineTo(toX(pts[i + 1]), toY(pts[i + 1]));
         ctx.stroke();
-        strokeCtx.lineTo(pts[i + 1].x * window.innerWidth, pts[i + 1].y * window.innerHeight);
+        strokeCtx.lineTo(toX(pts[i + 1]), toY(pts[i + 1]));
         strokeCtx.stroke();
         i++;
       }
