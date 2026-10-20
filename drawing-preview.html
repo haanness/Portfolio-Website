@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Startup Drawings – Vorschau</title>
+<!-- Lokales Werkzeug: neben index.html legen und per Doppelklick öffnen.
+     Muss nicht hochgeladen werden. Liest drawings-manifest.js + drawings/. -->
+<script src="drawings-manifest.js"></script>
+<style>
+  @font-face { font-family: 'PJS'; src: url('font/PlusJakartaSans-Variable.ttf'); font-weight: 200 800; }
+  :root { --bg: #F6F6F6; --ink: #00906A; --line: rgba(0,144,106,.28); --mark: #B3261E; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 500 16px/1.5 'PJS', system-ui, sans-serif; padding-bottom: 7rem; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1rem 2rem; padding: 1.5rem; border-bottom: 2px solid var(--ink); }
+  h1 { font-size: 22px; font-weight: 600; margin: 0; }
+  .tabs { display: flex; gap: .5rem; }
+  button { font: inherit; color: var(--ink); background: none; border: 2px solid var(--ink); border-radius: 4px; padding: .25rem .8rem; cursor: pointer; }
+  button:hover { background: var(--ink); color: var(--bg); }
+  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  #status { padding: 1rem 1.5rem 0; min-height: 2.5rem; }
+  #grid { display: flex; flex-wrap: wrap; gap: 1.5rem; padding: 1rem 1.5rem; align-items: flex-start; }
+  .card { width: var(--w); }
+  .card canvas { display: block; width: 100%; background: #fff; border: 2px solid var(--ink); }
+  .card.marked canvas { border-color: var(--mark); opacity: .45; }
+  .name { margin: .5rem 0 .25rem; font-weight: 600; overflow-wrap: anywhere; }
+  .card.marked .name { color: var(--mark); text-decoration: line-through; }
+  .num { font-weight: 400; opacity: .7; }
+  .row { display: flex; gap: .4rem; }
+  .row button { font-size: 14px; padding: .1rem .6rem; }
+  .card.marked .del { border-color: var(--mark); background: var(--mark); color: #fff; }
+  .del { border-color: var(--line); }
+  #bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 2px solid var(--ink); padding: .75rem 1.5rem; display: none; gap: 1rem; align-items: center; flex-wrap: wrap; }
+  #bar.show { display: flex; }
+  #cmd { flex: 1 1 24rem; min-width: 0; font: 13px/1.4 ui-monospace, Menlo, monospace; background: #fff; border: 1px solid var(--line); padding: .4rem .6rem; max-height: 4.5rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Startup Drawings</h1>
+  <div class="tabs" role="group" aria-label="Gerät">
+    <button data-kind="desktop" aria-pressed="true">Desktop</button>
+    <button data-kind="mobile" aria-pressed="false">Mobile</button>
+  </div>
+</header>
+<div id="status" role="status"></div>
+<div id="grid"></div>
+<div id="bar">
+  <div id="cmd"></div>
+  <button id="copy">Löschbefehl kopieren</button>
+  <button id="clear">Markierung aufheben</button>
+</div>
+
+<script>
+const FOLDERS = { desktop: 'Startup_Drawings/Desktop_Drawings', mobile: 'Startup_Drawings/Mobile_Drawings' };
+const SIZE    = { desktop: { w: 340, aspect: 16 / 10 }, mobile: { w: 150, aspect: 9 / 19.5 } }; // width : height
+const status = document.getElementById('status'), grid = document.getElementById('grid');
+
+const cache = {};                       // kind -> array of drawings
+let marked = new Set();                 // "desktop/drawing-3.json"
+try { marked = new Set(JSON.parse(sessionStorage.getItem('marked') || '[]')); } catch {}
+const saveMarked = () => { try { sessionStorage.setItem('marked', JSON.stringify([...marked])); } catch {} };
+
+// Every drawing file just sets window.__introDrawing — load them one after another.
+const loadOne = (kind, i) => new Promise(resolve => {
+  const s = document.createElement('script');
+  s.src = `drawings/${kind}/${i}.js`;
+  s.onload  = () => { const d = window.__introDrawing; delete window.__introDrawing; s.remove(); resolve(d || null); };
+  s.onerror = () => { s.remove(); resolve(null); };
+  document.head.appendChild(s);
+});
+
+const draw = (canvas, strokes, upTo = Infinity) => {
+  const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== w * dpr) { canvas.width = w * dpr; canvas.height = h * dpr; }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = '#00906A'; ctx.lineWidth = 1.6; ctx.lineJoin = 'round';
+  for (const stroke of strokes) {
+    const pts = stroke.points.filter(p => p.t <= upTo);
+    if (!pts.length) continue;
+    ctx.beginPath();
+    pts.forEach((p, i) => i ? ctx.lineTo(p.x * w, p.y * h) : ctx.moveTo(p.x * w, p.y * h));
+    ctx.stroke();
+  }
+};
+
+const play = (canvas, strokes) => {      // same 5 s squeeze as on the site
+  const t0 = strokes[0].points[0].t, total = strokes.at(-1).points.at(-1).t - t0 || 1;
+  const norm = strokes.map(s => ({ points: s.points.map(p => ({ ...p, t: (p.t - t0) / total })) }));
+  const start = performance.now();
+  const step = now => {
+    const k = Math.min((now - start) / 5000, 1);
+    draw(canvas, norm, k);
+    if (k < 1) requestAnimationFrame(step); else draw(canvas, strokes);
+  };
+  requestAnimationFrame(step);
+};
+
+const updateBar = () => {
+  const list = [...marked].map(m => { const [k, n] = m.split('/'); return `"${FOLDERS[k]}/${n}"`; });
+  document.getElementById('bar').classList.toggle('show', list.length > 0);
+  document.getElementById('cmd').textContent = list.length ? `rm ${list.join(' ')}` : '';
+};
+
+const show = async kind => {
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', b.dataset.kind === kind));
+  grid.textContent = '';
+  if (typeof DRAWINGS_MANIFEST === 'undefined') {
+    status.textContent = 'drawings-manifest.js nicht gefunden. Diese Datei neben index.html legen und im Terminal „node bundle-drawings.js“ ausführen.';
+    return;
+  }
+  const count = DRAWINGS_MANIFEST[kind] || 0;
+  const names = (typeof DRAWINGS_SOURCES !== 'undefined' && DRAWINGS_SOURCES[kind]) || [];
+  if (!cache[kind]) {
+    cache[kind] = [];
+    for (let i = 0; i < count; i++) {
+      status.textContent = `Lade ${i + 1} / ${count} …`;
+      cache[kind].push(await loadOne(kind, i));
+    }
+  }
+  status.textContent = names.length
+    ? `${count} Zeichnungen. Dateiname = die JSON-Quelle, die du löschen würdest.`
+    : `${count} Zeichnungen. Dateinamen fehlen: „node bundle-drawings.js“ mit der neuen Version erneut ausführen.`;
+
+  cache[kind].forEach((strokes, i) => {
+    const name = names[i] || `(Nr. ${i})`, key = `${kind}/${name}`;
+    const card = document.createElement('div');
+    card.className = 'card' + (marked.has(key) ? ' marked' : '');
+    card.style.setProperty('--w', SIZE[kind].w + 'px');
+    const canvas = document.createElement('canvas');
+    canvas.style.aspectRatio = String(SIZE[kind].aspect);
+    const label = document.createElement('div'); label.className = 'name';
+    label.textContent = name + ' ';
+    const num = document.createElement('span'); num.className = 'num'; num.textContent = `#${i}`; label.append(num);
+    const row = document.createElement('div'); row.className = 'row';
+    const bPlay = document.createElement('button'); bPlay.textContent = 'Abspielen';
+    const bDel  = document.createElement('button'); bDel.className = 'del';
+    bDel.textContent = marked.has(key) ? 'Markiert' : 'Zum Löschen markieren';
+    row.append(bPlay, bDel); card.append(canvas, label, row); grid.append(card);
+    if (strokes) draw(canvas, strokes); else label.textContent += ' – konnte nicht geladen werden';
+    bPlay.onclick = () => strokes && play(canvas, strokes);
+    bDel.onclick = () => {
+      marked.has(key) ? marked.delete(key) : marked.add(key);
+      card.classList.toggle('marked', marked.has(key));
+      bDel.textContent = marked.has(key) ? 'Markiert' : 'Zum Löschen markieren';
+      saveMarked(); updateBar();
+    };
+  });
+  updateBar();
+};
+
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => show(b.dataset.kind));
+document.getElementById('clear').onclick = () => { marked.clear(); saveMarked(); show(document.querySelector('.tabs [aria-pressed=true]').dataset.kind); };
+document.getElementById('copy').onclick = async e => {
+  try { await navigator.clipboard.writeText(document.getElementById('cmd').textContent); e.target.textContent = 'Kopiert ✓'; }
+  catch { e.target.textContent = 'Text oben markieren und kopieren'; }
+  setTimeout(() => e.target.textContent = 'Löschbefehl kopieren', 2000);
+};
+show('desktop');
+</script>
+</body>
+</html>
