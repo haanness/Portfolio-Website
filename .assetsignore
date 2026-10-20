@@ -1,0 +1,8 @@
+.assetsignore
+wrangler.toml
+Startup_Drawings
+bundle-drawings.js
+drawing-preview.html
+.DS_Store
+.git
+node_modules
